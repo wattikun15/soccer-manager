@@ -4,1038 +4,227 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="description" content="8人制サッカー 1Dayトーナメント 出場時間・フォーメーション管理アプリ">
-  <title>⚽ 出場管理 - 8人制サッカー</title>
+  <title>&#x26BD; 出場管理 - 8人制サッカー</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ===== CSS Reset & Variables ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg-primary: #0a0e1a;
-      --bg-secondary: #111827;
-      --bg-card: rgba(17, 24, 39, 0.85);
-      --bg-glass: rgba(30, 41, 59, 0.6);
-      --bg-input: rgba(30, 41, 59, 0.8);
-      --border-glass: rgba(99, 130, 255, 0.15);
-      --border-subtle: rgba(148, 163, 184, 0.12);
-
-      --accent-primary: #6366f1;
-      --accent-secondary: #818cf8;
-      --accent-glow: rgba(99, 102, 241, 0.3);
-      --accent-green: #22c55e;
-      --accent-green-glow: rgba(34, 197, 94, 0.25);
-      --accent-amber: #f59e0b;
-      --accent-amber-glow: rgba(245, 158, 11, 0.25);
-      --accent-red: #ef4444;
-      --accent-red-glow: rgba(239, 68, 68, 0.2);
-      --accent-cyan: #06b6d4;
-
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --text-accent: #a5b4fc;
-
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
-      --shadow-glow: 0 0 20px var(--accent-glow);
-
-      --font-main: 'Inter', 'Noto Sans JP', -apple-system, sans-serif;
-      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    html {
-      font-size: 14px;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      font-family: var(--font-main);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 100dvh;
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ===== Background Effect ===== */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                  radial-gradient(ellipse at 70% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    /* ===== Header ===== */
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(10, 14, 26, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border-glass);
-      padding: 12px 16px;
-    }
-
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .app-title {
-      font-size: 1.25rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #818cf8, #06b6d4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.02em;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    /* ===== Buttons ===== */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 8px 14px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-family: var(--font-main);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      white-space: nowrap;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
-      color: white;
-      box-shadow: 0 2px 10px var(--accent-glow);
-    }
-    .btn-primary:active {
-      transform: scale(0.95);
-      box-shadow: 0 1px 5px var(--accent-glow);
-    }
-
-    .btn-success {
-      background: linear-gradient(135deg, var(--accent-green), #16a34a);
-      color: white;
-      box-shadow: 0 2px 10px var(--accent-green-glow);
-    }
-    .btn-success:active {
-      transform: scale(0.95);
-    }
-
-    .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--accent-red);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-    }
-    .btn-danger:active {
-      background: rgba(239, 68, 68, 0.3);
-      transform: scale(0.95);
-    }
-
-    .btn-ghost {
-      background: var(--bg-glass);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-subtle);
-    }
-    .btn-ghost:active {
-      background: rgba(30, 41, 59, 0.9);
-      transform: scale(0.95);
-    }
-
-    .btn-sm {
-      padding: 5px 10px;
-      font-size: 0.75rem;
-    }
-
-    .btn-icon {
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-    }
-
-    /* ===== Summary Bar ===== */
-    .summary-bar {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding: 2px 0;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-    .summary-bar::-webkit-scrollbar { display: none; }
-
-    .summary-chip {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 10px;
-      background: var(--bg-glass);
-      border: 1px solid var(--border-subtle);
-      border-radius: 50px;
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .summary-chip .count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      background: var(--accent-primary);
-      color: white;
-      border-radius: 50px;
-      font-size: 0.65rem;
-      font-weight: 700;
-    }
-
-    .summary-chip .count.high {
-      background: var(--accent-green);
-    }
-    .summary-chip .count.low {
-      background: var(--accent-amber);
-    }
-
-    /* ===== Main Content ===== */
-    .main {
-      position: relative;
-      z-index: 1;
-      padding: 16px;
-      padding-bottom: 100px;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    /* ===== Section Title ===== */
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 12px;
-    }
-
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, var(--border-subtle), transparent);
-    }
-
-    /* ===== Match Card ===== */
-    .match-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      margin-bottom: 16px;
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: var(--shadow-md);
-      animation: fadeSlideIn 0.3s ease-out;
-    }
-
-    @keyframes fadeSlideIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .match-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
-      border-bottom: 1px solid var(--border-glass);
-    }
-
-    .match-info {
-      flex: 1;
-    }
-
-    .match-name {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 3px;
-    }
-
-    .match-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .match-meta span {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .match-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    /* ===== Table ===== */
-    .table-wrapper {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .table-wrapper::-webkit-scrollbar { display: none; }
-
-    .match-table {
-      width: 100%;
-      min-width: max-content;
-      border-collapse: collapse;
-    }
-
-    .match-table th,
-    .match-table td {
-      text-align: center;
-      padding: 0;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .match-table th {
-      padding: 8px 6px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: rgba(30, 41, 59, 0.5);
-      white-space: nowrap;
-      position: relative;
-    }
-
-    .match-table th.player-col {
-      min-width: 52px;
-      max-width: 64px;
-    }
-
-    .match-table th .player-delete {
-      position: absolute;
-      top: 1px;
-      right: 1px;
-      width: 14px;
-      height: 14px;
-      font-size: 8px;
-      line-height: 14px;
-      background: rgba(239, 68, 68, 0.5);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .edit-mode .match-table th .player-delete {
-      display: flex;
-    }
-
-    .match-table td.half-label {
-      padding: 6px 10px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-accent);
-      background: rgba(99, 102, 241, 0.07);
-      white-space: nowrap;
-      min-width: 50px;
-      text-align: left;
-    }
-
-    .match-table td.half-label.second-half {
-      color: var(--accent-cyan);
-      background: rgba(6, 182, 212, 0.07);
-    }
-
-    /* ===== Cell Tap Interaction ===== */
-    .cell {
-      width: 52px;
-      height: 44px;
-      cursor: pointer;
-      position: relative;
-      transition: background var(--transition);
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .cell:active {
-      background: rgba(99, 102, 241, 0.15);
-    }
-
-    .cell .cell-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      font-size: 1rem;
-      font-weight: 700;
-      transition: all 0.15s ease;
-    }
-
-    .cell[data-status="play"] {
-      background: rgba(34, 197, 94, 0.08);
-    }
-    .cell[data-status="play"] .cell-content {
-      color: var(--accent-green);
-      font-size: 1.2rem;
-    }
-
-    .cell[data-status="gk"] {
-      background: rgba(245, 158, 11, 0.08);
-    }
-    .cell[data-status="gk"] .cell-content {
-      color: var(--accent-amber);
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-    }
-
-    .cell-pop {
-      animation: cellPop 0.2s ease;
-    }
-
-    @keyframes cellPop {
-      0% { transform: scale(0.7); opacity: 0.5; }
-      50% { transform: scale(1.15); }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    /* ===== Count Row ===== */
-    .match-table tr.count-row td {
-      padding: 6px 4px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: rgba(30, 41, 59, 0.3);
-      border-top: 2px solid var(--border-glass);
-    }
-
-    .match-table tr.count-row td.count-label {
-      text-align: left;
-      padding-left: 10px;
-      color: var(--text-secondary);
-    }
-
-    /* ===== Total Summary ===== */
-    .total-section {
-      margin-top: 24px;
-    }
-
-    .total-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .total-card .total-header {
-      padding: 14px 16px;
-      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(6, 182, 212, 0.05));
-      border-bottom: 1px solid var(--border-glass);
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
-
-    .total-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 1px;
-      background: var(--border-subtle);
-    }
-
-    .total-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      background: var(--bg-secondary);
-    }
-
-    .total-item .player-name {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .total-item .total-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 28px;
-      height: 28px;
-      padding: 0 8px;
-      border-radius: 50px;
-      font-size: 0.8rem;
-      font-weight: 800;
-    }
-
-    .total-item .total-count.top { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-    .total-item .total-count.mid { background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); }
-    .total-item .total-count.low { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
-    .total-item .total-count.zero { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
-
-    /* ===== Modal ===== */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-glass);
-      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      width: 100%;
-      max-width: 500px;
-      padding: 24px 20px;
-      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-      transform: translateY(100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .modal-overlay.active .modal {
-      transform: translateY(0);
-    }
-
-    .modal-handle {
-      width: 36px;
-      height: 4px;
-      background: var(--text-muted);
-      border-radius: 2px;
-      margin: 0 auto 18px;
-    }
-
-    .modal h2 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
-
-    .form-group {
-      margin-bottom: 14px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 6px;
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
-      font-family: var(--font-main);
-      font-size: 0.9rem;
-      transition: border-color var(--transition);
-      outline: none;
-    }
-
-    .form-group input:focus {
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
-    .form-group input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .modal-actions .btn {
-      flex: 1;
-      justify-content: center;
-      padding: 12px;
-    }
-
-    /* ===== Empty State ===== */
-    .empty-state {
-      text-align: center;
-      padding: 48px 20px;
-      color: var(--text-muted);
-    }
-
-    .empty-state .empty-icon {
-      font-size: 3rem;
-      margin-bottom: 12px;
-    }
-
-    .empty-state p {
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-    }
-
-    /* ===== FAB ===== */
-    .fab-container {
-      position: fixed;
-      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-      right: 20px;
-      z-index: 50;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: flex-end;
-    }
-
-    .fab {
-      width: 52px;
-      height: 52px;
-      border: none;
-      border-radius: 50%;
-      font-size: 1.3rem;
-      cursor: pointer;
-      box-shadow: var(--shadow-lg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all var(--transition);
-    }
-
-    .fab:active {
-      transform: scale(0.9);
-    }
-
-    .fab-match {
-      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
-      color: white;
-      box-shadow: var(--shadow-lg), var(--shadow-glow);
-    }
-
-    /* ===== Edit Mode Toggle ===== */
-    .edit-toggle {
-      position: relative;
-    }
-
-    .edit-toggle.active {
-      background: rgba(239, 68, 68, 0.15) !important;
-      color: var(--accent-red) !important;
-      border-color: rgba(239, 68, 68, 0.3) !important;
-    }
-
-    /* ===== Toast ===== */
-    .toast {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-glass);
-      color: var(--text-primary);
-      padding: 10px 20px;
-      border-radius: 50px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      box-shadow: var(--shadow-lg);
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s ease;
-      z-index: 300;
-      white-space: nowrap;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* ===== Scrollbar ===== */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
-
-    /* ===== Match Edit Inline ===== */
-    .match-edit-row {
-      display: flex;
-      gap: 8px;
-      padding: 10px 16px;
-      background: rgba(30, 41, 59, 0.3);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .match-edit-row input {
-      flex: 1;
-      padding: 6px 10px;
-      background: var(--bg-input);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
-      font-family: var(--font-main);
-      font-size: 0.78rem;
-      outline: none;
-    }
-    .match-edit-row input:focus {
-      border-color: var(--accent-primary);
-    }
-
-    /* ===== Data Action ===== */
-    .data-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin-top: 24px;
-      padding-bottom: 20px;
-    }
-
-    /* ===== Formation Section ===== */
-    .formation-section {
-      border-top: 1px solid var(--border-subtle);
-      padding: 14px 16px;
-      background: rgba(10, 14, 26, 0.4);
-    }
-
-    .formation-title {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 12px;
-    }
-
-    .formation-halves {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .formation-half-block {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .formation-half-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--text-accent);
-      margin-bottom: 2px;
-    }
-
-    .formation-half-label.second {
-      color: var(--accent-cyan);
-    }
-
-    .formation-inputs {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .formation-field {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .formation-field label {
-      font-size: 0.6rem;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .formation-field label.fw-label { color: #f87171; }
-    .formation-field label.mf-label { color: #34d399; }
-    .formation-field label.df-label { color: #60a5fa; }
-
-    .formation-num {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    .formation-num button {
-      width: 22px;
-      height: 22px;
-      background: var(--bg-glass);
-      border: 1px solid var(--border-subtle);
-      border-radius: 50%;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      line-height: 1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all var(--transition);
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    .formation-num button:active {
-      background: var(--accent-primary);
-      color: white;
-      transform: scale(0.9);
-    }
-
-    .formation-num span {
-      min-width: 18px;
-      text-align: center;
-      font-size: 0.9rem;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .formation-badge {
-      padding: 2px 8px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      border-radius: 50px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--accent-secondary);
-      margin-left: auto;
-      white-space: nowrap;
-    }
-
-    /* ===== Pitch SVG ===== */
-    .pitch-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .pitch-svg-container {
-      width: 100%;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-    }
-
-    /* ===== Spreadsheet Import ===== */
-    .sheet-import-btn {
-      width: 100%;
-      margin-top: 8px;
-      padding: 10px;
-      background: rgba(6, 182, 212, 0.1);
-      border: 1px dashed rgba(6, 182, 212, 0.4);
-      border-radius: var(--radius-sm);
-      color: var(--accent-cyan);
-      font-family: var(--font-main);
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .sheet-import-btn:active {
-      background: rgba(6, 182, 212, 0.2);
-      transform: scale(0.98);
-    }
-
-    .sheet-player-list {
-      max-height: 300px;
-      overflow-y: auto;
-      margin: 12px 0;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-    }
-
-    .sheet-player-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border-subtle);
-      cursor: pointer;
-      transition: background var(--transition);
-    }
-    .sheet-player-item:last-child { border-bottom: none; }
-    .sheet-player-item:active { background: rgba(99, 102, 241, 0.1); }
-
-    .sheet-player-item input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--accent-primary);
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .sheet-player-name {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      flex: 1;
-    }
-
-    .sheet-player-meta {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .sheet-already-added {
-      font-size: 0.65rem;
-      padding: 2px 7px;
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--accent-green);
-      border-radius: 50px;
-      font-weight: 700;
-    }
-
-    .sheet-select-all-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 4px;
-      margin-bottom: 4px;
-    }
-
-    .sheet-select-all-row label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-    }
-
-    .sheet-loading {
-      text-align: center;
-      padding: 32px 20px;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-
-    .sheet-loading .spinner {
-      display: inline-block;
-      width: 28px;
-      height: 28px;
-      border: 3px solid var(--border-glass);
-      border-top-color: var(--accent-cyan);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 10px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* ===== Responsive ===== */
-    @media (min-width: 600px) {
-      html { font-size: 15px; }
-      .main { padding: 24px; padding-bottom: 100px; }
-    }
+      --bg-primary: #0a0e1a; --bg-secondary: #111827;
+      --bg-card: rgba(17,24,39,0.85); --bg-glass: rgba(30,41,59,0.6);
+      --bg-input: rgba(30,41,59,0.8); --border-glass: rgba(99,130,255,0.15);
+      --border-subtle: rgba(148,163,184,0.12);
+      --accent-primary: #6366f1; --accent-secondary: #818cf8;
+      --accent-glow: rgba(99,102,241,0.3); --accent-green: #22c55e;
+      --accent-green-glow: rgba(34,197,94,0.25); --accent-amber: #f59e0b;
+      --accent-amber-glow: rgba(245,158,11,0.25); --accent-red: #ef4444;
+      --accent-red-glow: rgba(239,68,68,0.2); --accent-cyan: #06b6d4;
+      --text-primary: #f1f5f9; --text-secondary: #94a3b8;
+      --text-muted: #64748b; --text-accent: #a5b4fc;
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3); --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5); --shadow-glow: 0 0 20px var(--accent-glow);
+      --font-main: 'Inter','Noto Sans JP',-apple-system,sans-serif;
+      --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    html { font-size: 14px; -webkit-tap-highlight-color: transparent; }
+    body { font-family: var(--font-main); background: var(--bg-primary); color: var(--text-primary); min-height: 100dvh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    body::before { content:''; position:fixed; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(ellipse at 30% 20%,rgba(99,102,241,0.08) 0%,transparent 50%), radial-gradient(ellipse at 70% 80%,rgba(6,182,212,0.05) 0%,transparent 50%); z-index:0; pointer-events:none; }
+
+    /* Header */
+    .header { position:sticky; top:0; z-index:100; background:rgba(10,14,26,0.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid var(--border-glass); padding:12px 16px; }
+    .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .app-title { font-size:1.25rem; font-weight:800; background:linear-gradient(135deg,#818cf8,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-0.02em; }
+    .header-actions { display:flex; gap:8px; }
+    .summary-bar { display:flex; gap:6px; overflow-x:auto; padding:2px 0; scrollbar-width:none; -ms-overflow-style:none; }
+    .summary-bar::-webkit-scrollbar { display:none; }
+    .summary-chip { display:flex; align-items:center; gap:4px; padding:4px 10px; background:var(--bg-glass); border:1px solid var(--border-subtle); border-radius:50px; font-size:0.72rem; font-weight:500; color:var(--text-secondary); white-space:nowrap; flex-shrink:0; }
+    .summary-chip .count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; background:var(--accent-primary); color:white; border-radius:50px; font-size:0.65rem; font-weight:700; }
+    .summary-chip .count.high { background:var(--accent-green); }
+    .summary-chip .count.low { background:var(--accent-amber); }
+
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; gap:5px; padding:8px 14px; border:none; border-radius:var(--radius-sm); font-family:var(--font-main); font-size:0.82rem; font-weight:600; cursor:pointer; transition:all var(--transition); white-space:nowrap; -webkit-user-select:none; user-select:none; }
+    .btn-primary { background:linear-gradient(135deg,var(--accent-primary),#4f46e5); color:white; box-shadow:0 2px 10px var(--accent-glow); }
+    .btn-primary:active { transform:scale(0.95); }
+    .btn-success { background:linear-gradient(135deg,var(--accent-green),#16a34a); color:white; box-shadow:0 2px 10px var(--accent-green-glow); }
+    .btn-success:active { transform:scale(0.95); }
+    .btn-danger { background:rgba(239,68,68,0.15); color:var(--accent-red); border:1px solid rgba(239,68,68,0.25); }
+    .btn-danger:active { background:rgba(239,68,68,0.3); transform:scale(0.95); }
+    .btn-ghost { background:var(--bg-glass); color:var(--text-secondary); border:1px solid var(--border-subtle); }
+    .btn-ghost:active { background:rgba(30,41,59,0.9); transform:scale(0.95); }
+    .btn-sm { padding:5px 10px; font-size:0.75rem; }
+
+    /* Main */
+    .main { position:relative; z-index:1; padding:16px; padding-bottom:100px; max-width:800px; margin:0 auto; }
+    .section-title { display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px; }
+    .section-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border-subtle),transparent); }
+
+    /* Match Card */
+    .match-card { background:var(--bg-card); border:1px solid var(--border-glass); border-radius:var(--radius-lg); margin-bottom:16px; overflow:hidden; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:var(--shadow-md); animation:fadeSlideIn 0.3s ease-out; }
+    @keyframes fadeSlideIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    .match-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(6,182,212,0.05)); border-bottom:1px solid var(--border-glass); }
+    .match-info { flex:1; }
+    .match-name { font-size:1rem; font-weight:700; color:var(--text-primary); margin-bottom:3px; }
+    .match-meta { display:flex; align-items:center; gap:10px; font-size:0.75rem; color:var(--text-muted); }
+    .match-actions { display:flex; gap:6px; }
+
+    /* Table */
+    .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .table-wrapper::-webkit-scrollbar { display:none; }
+    .match-table { width:100%; min-width:max-content; border-collapse:collapse; }
+    .match-table th, .match-table td { text-align:center; padding:0; border:1px solid var(--border-subtle); }
+    .match-table th { padding:8px 6px; font-size:0.7rem; font-weight:600; color:var(--text-secondary); background:rgba(30,41,59,0.5); white-space:nowrap; position:relative; }
+    .match-table th.player-col { min-width:52px; max-width:64px; }
+    .match-table th .player-delete { position:absolute; top:1px; right:1px; width:14px; height:14px; font-size:8px; line-height:14px; background:rgba(239,68,68,0.5); color:white; border:none; border-radius:50%; cursor:pointer; display:none; align-items:center; justify-content:center; }
+    .edit-mode .match-table th .player-delete { display:flex; }
+    .match-table td.half-label { padding:6px 10px; font-size:0.72rem; font-weight:700; color:var(--text-accent); background:rgba(99,102,241,0.07); white-space:nowrap; min-width:50px; text-align:left; }
+    .match-table td.half-label.second-half { color:var(--accent-cyan); background:rgba(6,182,212,0.07); }
+
+    /* Cell */
+    .cell { width:52px; height:44px; cursor:pointer; position:relative; transition:background var(--transition); -webkit-user-select:none; user-select:none; }
+    .cell:active { background:rgba(99,102,241,0.15); }
+    .cell .cell-content { display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-size:1rem; font-weight:700; transition:all 0.15s ease; }
+    .cell[data-status="play"] { background:rgba(34,197,94,0.08); }
+    .cell[data-status="play"] .cell-content { color:var(--accent-green); font-size:1.2rem; }
+    .cell[data-status="gk"] { background:rgba(245,158,11,0.08); }
+    .cell[data-status="gk"] .cell-content { color:var(--accent-amber); font-size:0.7rem; font-weight:800; letter-spacing:0.03em; }
+    @keyframes cellPop { 0%{transform:scale(0.7);opacity:0.5} 50%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+
+    /* Count Row */
+    .match-table tr.count-row td { padding:6px 4px; font-size:0.7rem; font-weight:700; color:var(--text-muted); background:rgba(30,41,59,0.3); border-top:2px solid var(--border-glass); }
+    .match-table tr.count-row td.count-label { text-align:left; padding-left:10px; color:var(--text-secondary); }
+
+    /* Total Summary */
+    .total-section { margin-top:24px; }
+    .total-card { background:var(--bg-card); border:1px solid var(--border-glass); border-radius:var(--radius-lg); overflow:hidden; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); box-shadow:var(--shadow-md); }
+    .total-card .total-header { padding:14px 16px; background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(6,182,212,0.05)); border-bottom:1px solid var(--border-glass); font-size:0.9rem; font-weight:700; }
+    .total-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:1px; background:var(--border-subtle); }
+    .total-item { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:var(--bg-secondary); }
+    .total-item .player-name { font-size:0.82rem; font-weight:600; color:var(--text-primary); }
+    .total-item .total-count { display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:28px; padding:0 8px; border-radius:50px; font-size:0.8rem; font-weight:800; }
+    .total-item .total-count.top { background:rgba(34,197,94,0.15); color:var(--accent-green); }
+    .total-item .total-count.mid { background:rgba(99,102,241,0.15); color:var(--accent-secondary); }
+    .total-item .total-count.low { background:rgba(245,158,11,0.15); color:var(--accent-amber); }
+    .total-item .total-count.zero { background:rgba(239,68,68,0.1); color:var(--accent-red); }
+
+    /* Modal */
+    .modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s ease; }
+    .modal-overlay.active { opacity:1; pointer-events:auto; }
+    .modal { background:var(--bg-secondary); border:1px solid var(--border-glass); border-radius:var(--radius-xl) var(--radius-xl) 0 0; width:100%; max-width:500px; padding:24px 20px; padding-bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .modal-overlay.active .modal { transform:translateY(0); }
+    .modal-handle { width:36px; height:4px; background:var(--text-muted); border-radius:2px; margin:0 auto 18px; }
+    .modal h2 { font-size:1.1rem; font-weight:700; margin-bottom:18px; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+    .form-group input { width:100%; padding:10px 14px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); font-family:var(--font-main); font-size:0.9rem; transition:border-color var(--transition); outline:none; }
+    .form-group input:focus { border-color:var(--accent-primary); box-shadow:0 0 0 3px var(--accent-glow); }
+    .form-group input::placeholder { color:var(--text-muted); }
+    .modal-actions { display:flex; gap:10px; margin-top:20px; }
+    .modal-actions .btn { flex:1; justify-content:center; padding:12px; }
+
+    /* Empty State */
+    .empty-state { text-align:center; padding:48px 20px; color:var(--text-muted); }
+    .empty-state .empty-icon { font-size:3rem; margin-bottom:12px; }
+    .empty-state p { font-size:0.85rem; margin-bottom:16px; }
+
+    /* FAB */
+    .fab-container { position:fixed; bottom:calc(20px + env(safe-area-inset-bottom,0px)); right:20px; z-index:50; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
+    .fab { width:52px; height:52px; border:none; border-radius:50%; font-size:1.3rem; cursor:pointer; box-shadow:var(--shadow-lg); display:flex; align-items:center; justify-content:center; transition:all var(--transition); }
+    .fab:active { transform:scale(0.9); }
+    .fab-match { background:linear-gradient(135deg,var(--accent-primary),#4f46e5); color:white; box-shadow:var(--shadow-lg),var(--shadow-glow); }
+
+    /* Edit Toggle */
+    .edit-toggle { position:relative; }
+    .edit-toggle.active { background:rgba(239,68,68,0.15) !important; color:var(--accent-red) !important; border-color:rgba(239,68,68,0.3) !important; }
+
+    /* Toast */
+    .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--bg-secondary); border:1px solid var(--border-glass); color:var(--text-primary); padding:10px 20px; border-radius:50px; font-size:0.8rem; font-weight:500; box-shadow:var(--shadow-lg); opacity:0; pointer-events:none; transition:all 0.3s ease; z-index:300; white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* Match Edit Inline */
+    .match-edit-row { display:flex; gap:8px; padding:10px 16px; background:rgba(30,41,59,0.3); border-bottom:1px solid var(--border-subtle); }
+    .match-edit-row input { flex:1; padding:6px 10px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); font-family:var(--font-main); font-size:0.78rem; outline:none; }
+    .match-edit-row input:focus { border-color:var(--accent-primary); }
+
+    /* Data Actions */
+    .data-actions { display:flex; gap:8px; justify-content:center; margin-top:24px; padding-bottom:20px; }
+
+    /* Formation Section */
+    .formation-section { border-top:1px solid var(--border-subtle); padding:14px 16px; background:rgba(10,14,26,0.4); }
+    .formation-title { font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:12px; }
+    .formation-halves { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .formation-half-block { display:flex; flex-direction:column; gap:8px; }
+    .formation-half-label { font-size:0.7rem; font-weight:700; color:var(--text-accent); margin-bottom:2px; }
+    .formation-half-label.second { color:var(--accent-cyan); }
+    .formation-inputs { display:flex; align-items:center; gap:6px; }
+    .formation-field { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .formation-field label { font-size:0.6rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; }
+    .formation-field label.fw-label { color:#f87171; }
+    .formation-field label.mf-label { color:#34d399; }
+    .formation-field label.df-label { color:#60a5fa; }
+    .formation-num { display:flex; align-items:center; gap:3px; }
+    .formation-num button { width:22px; height:22px; background:var(--bg-glass); border:1px solid var(--border-subtle); border-radius:50%; color:var(--text-secondary); font-size:0.9rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all var(--transition); -webkit-user-select:none; user-select:none; }
+    .formation-num button:active { background:var(--accent-primary); color:white; transform:scale(0.9); }
+    .formation-num span { min-width:18px; text-align:center; font-size:0.9rem; font-weight:800; color:var(--text-primary); }
+    .formation-badge { padding:2px 8px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:50px; font-size:0.68rem; font-weight:700; color:var(--accent-secondary); margin-left:auto; white-space:nowrap; }
+    .pitch-wrap { display:flex; flex-direction:column; gap:4px; }
+    .pitch-svg-container { width:100%; border-radius:var(--radius-sm); overflow:hidden; }
+
+    /* Spreadsheet Import */
+    .sheet-import-btn { width:100%; margin-top:8px; padding:10px; background:rgba(6,182,212,0.1); border:1px dashed rgba(6,182,212,0.4); border-radius:var(--radius-sm); color:var(--accent-cyan); font-family:var(--font-main); font-size:0.8rem; font-weight:600; cursor:pointer; transition:all var(--transition); display:flex; align-items:center; justify-content:center; gap:6px; }
+    .sheet-import-btn:active { background:rgba(6,182,212,0.2); transform:scale(0.98); }
+    .sheet-player-list { max-height:300px; overflow-y:auto; margin:12px 0; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); }
+    .sheet-player-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border-subtle); cursor:pointer; transition:background var(--transition); }
+    .sheet-player-item:last-child { border-bottom:none; }
+    .sheet-player-item:active { background:rgba(99,102,241,0.1); }
+    .sheet-player-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-primary); cursor:pointer; flex-shrink:0; }
+    .sheet-player-name { font-size:0.88rem; font-weight:600; color:var(--text-primary); flex:1; }
+    .sheet-already-added { font-size:0.65rem; padding:2px 7px; background:rgba(34,197,94,0.15); color:var(--accent-green); border-radius:50px; font-weight:700; }
+    .sheet-select-all-row { display:flex; align-items:center; justify-content:space-between; padding:8px 4px; margin-bottom:4px; }
+    .sheet-select-all-row label { display:flex; align-items:center; gap:8px; font-size:0.78rem; font-weight:600; color:var(--text-secondary); cursor:pointer; }
+    .sheet-loading { text-align:center; padding:32px 20px; color:var(--text-muted); font-size:0.85rem; }
+    .sheet-loading .spinner { display:inline-block; width:28px; height:28px; border:3px solid var(--border-glass); border-top-color:var(--accent-cyan); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:10px; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    ::-webkit-scrollbar { width:4px; height:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--text-muted); border-radius:2px; }
+
+    @media (min-width:600px) { html { font-size:15px; } .main { padding:24px; padding-bottom:100px; } }
   </style>
 </head>
 <body>
 
-  <!-- Header -->
   <header class="header" id="header">
     <div class="header-top">
-      <h1 class="app-title">⚽ 出場管理</h1>
+      <h1 class="app-title">&#x26BD; 出場管理</h1>
       <div class="header-actions">
-        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">
-          ✏️ 編集
-        </button>
-        <button class="btn btn-success btn-sm" onclick="openPlayerModal()">
-          👤+
-        </button>
-        <button class="btn btn-primary btn-sm" onclick="openMatchModal()">
-          🏟️+
-        </button>
+        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 編集</button>
+        <button class="btn btn-success btn-sm" onclick="openPlayerModal()">&#x1F464;+</button>
+        <button class="btn btn-primary btn-sm" onclick="openMatchModal()">&#x1F3DF;&#xFE0F;+</button>
       </div>
     </div>
     <div class="summary-bar" id="summaryBar"></div>
   </header>
 
-  <!-- Main -->
-  <main class="main" id="mainContent">
-    <!-- Matches rendered here -->
-  </main>
+  <main class="main" id="mainContent"></main>
 
-  <!-- FAB -->
   <div class="fab-container">
-    <button class="fab fab-match" onclick="openMatchModal()" title="試合を追加">＋</button>
+    <button class="fab fab-match" onclick="openMatchModal()" title="試合を追加">&#xFF0B;</button>
   </div>
 
-  <!-- Add Player Modal -->
+  <!-- 選手追加モーダル -->
   <div class="modal-overlay" id="playerModal">
     <div class="modal">
       <div class="modal-handle"></div>
-      <h2>👤 選手を追加</h2>
+      <h2>&#x1F464; 選手を追加</h2>
       <div class="form-group">
         <label for="playerNameInput">選手名を入力</label>
         <input type="text" id="playerNameInput" placeholder="例: たろう" enterkeyhint="done">
       </div>
       <button class="sheet-import-btn" onclick="openSheetImportModal()">
-        📋 スプレッドシートから一括読み込み
+        &#x1F4CB; スプレッドシートから一括読み込み
       </button>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('playerModal')">キャンセル</button>
@@ -1044,11 +233,11 @@
     </div>
   </div>
 
-  <!-- Spreadsheet Import Modal -->
+  <!-- スプレッドシート読み込みモーダル -->
   <div class="modal-overlay" id="sheetImportModal">
     <div class="modal" style="max-height:90dvh;overflow-y:auto;">
       <div class="modal-handle"></div>
-      <h2>📋 スプレッドシートから読み込み</h2>
+      <h2>&#x1F4CB; スプレッドシートから読み込み</h2>
       <div id="sheetImportBody">
         <div class="sheet-loading">
           <div class="spinner"></div>
@@ -1057,16 +246,16 @@
       </div>
       <div class="modal-actions" id="sheetImportActions" style="display:none;">
         <button class="btn btn-ghost" onclick="closeModal('sheetImportModal')">キャンセル</button>
-        <button class="btn btn-success" onclick="importSelectedPlayers()">✅ 選択した選手を追加</button>
+        <button class="btn btn-success" onclick="importSelectedPlayers()">&#x2705; 選択した選手を追加</button>
       </div>
     </div>
   </div>
 
-  <!-- Add Match Modal -->
+  <!-- 試合追加モーダル -->
   <div class="modal-overlay" id="matchModal">
     <div class="modal">
       <div class="modal-handle"></div>
-      <h2>🏟️ 試合を追加</h2>
+      <h2>&#x1F3DF;&#xFE0F; 試合を追加</h2>
       <div class="form-group">
         <label for="matchNameInput">試合名</label>
         <input type="text" id="matchNameInput" placeholder="例: 予選①" enterkeyhint="next">
@@ -1086,110 +275,83 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div class="toast" id="toast"></div>
 
   <script>
-    // ===== State =====
     const STORAGE_KEY = 'soccer8_tournament_v2';
+    const SHEET_ID = '12TIoUIqGUDNPwpfDOgzXli7Np27Rd9zAwI1rcVUGRIg';
+    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv';
 
-    let state = {
-      players: [],
-      matches: [],
-      // matches[i].appearances = { "前半": { playerName: "none"|"play"|"gk" }, "後半": { ... } }
-      editMode: false
-    };
+    let state = { players: [], matches: [], editMode: false };
+    let sheetPlayers = [];
 
     // ===== Persistence =====
     function saveState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          players: state.players,
-          matches: state.matches
-        }));
-      } catch(e) {
-        console.warn('保存に失敗しました', e);
-      }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players: state.players, matches: state.matches })); } catch(e) {}
     }
-
     function loadState() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-          const parsed = JSON.parse(saved);
-          state.players = parsed.players || [];
-          state.matches = parsed.matches || [];
-          // 既存データにformation未設定の試合があれば初期値補完
+          const p = JSON.parse(saved);
+          state.players = p.players || [];
+          state.matches = p.matches || [];
           state.matches.forEach(m => {
-            if (!m.formation) {
-              m.formation = { '前半': {df:2,mf:3,fw:2}, '後半': {df:2,mf:3,fw:2} };
-            }
+            if (!m.formation) m.formation = { '\u524d\u534a': {df:2,mf:3,fw:2}, '\u5f8c\u534a': {df:2,mf:3,fw:2} };
           });
         }
-      } catch(e) {
-        console.warn('読み込みに失敗しました', e);
-      }
+      } catch(e) {}
     }
 
-    // ===== Helpers =====
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-    }
-
+    function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
     function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
-    // ===== Player Management =====
+    // ===== Player =====
     function openPlayerModal() {
       document.getElementById('playerModal').classList.add('active');
       setTimeout(() => document.getElementById('playerNameInput').focus(), 300);
     }
-
     function addPlayerOne(name) {
       if (!name || state.players.includes(name)) return false;
       state.players.push(name);
-      state.matches.forEach(match => {
-        ['前半', '後半'].forEach(half => {
-          if (!match.appearances[half][name]) {
-            match.appearances[half][name] = 'none';
-          }
-        });
+      state.matches.forEach(m => {
+        ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { if (!m.appearances[h][name]) m.appearances[h][name] = 'none'; });
       });
       return true;
     }
-
     function addPlayer() {
       const input = document.getElementById('playerNameInput');
       const name = input.value.trim();
       if (!name) return;
-      if (state.players.includes(name)) {
-        showToast('⚠️ 同じ名前の選手がいます');
-        return;
-      }
+      if (state.players.includes(name)) { showToast('\u26a0\ufe0f \u540c\u3058\u540d\u524d\u306e\u9078\u624b\u304c\u3044\u307e\u3059'); return; }
       addPlayerOne(name);
       input.value = '';
       closeModal('playerModal');
-      saveState();
-      render();
-      showToast(`👤 ${name} を追加しました`);
+      saveState(); render();
+      showToast('\uD83D\uDC64 ' + name + ' \u3092\u8ffd\u52a0\u3057\u307e\u3057\u305f');
+    }
+    function removePlayer(name) {
+      if (!confirm('\u300c' + name + '\u300d\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f\n\u5168\u8a66\u5408\u306e\u30c7\u30fc\u30bf\u3082\u524a\u9664\u3055\u308c\u307e\u3059\u3002')) return;
+      state.players = state.players.filter(p => p !== name);
+      state.matches.forEach(m => { ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { delete m.appearances[h][name]; }); });
+      saveState(); render();
+      showToast('\uD83D\uDDD1\uFE0F ' + name + ' \u3092\u524a\u9664\u3057\u307e\u3057\u305f');
     }
 
     // ===== Spreadsheet Import =====
-    const SHEET_ID = '12TIoUIqGUDNPwpfDOgzXli7Np27Rd9zAwI1rcVUGRIg';
-    const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
-
-    // スプレッドシートのCSVをパースして選手名リストを抽出
     function parseSheetCsv(csvText) {
       const lines = csvText.split(/\r?\n/);
       const players = [];
       lines.forEach(line => {
-        // カンマ区切りで分割（簡易CSV: ダブルクォート内カンマ対応）
         const cols = line.split(',');
-        // 4列目(index=3)が氏名。番号列(index=0)が数値のみの行を選手行とみなす
         const numCol = cols[0] ? cols[0].trim() : '';
         const nameCol = cols[3] ? cols[3].trim() : '';
         if (/^\d+$/.test(numCol) && nameCol && nameCol.length > 0) {
@@ -1199,70 +361,47 @@
       return players;
     }
 
-    let sheetPlayers = []; // 読み込んだスプレッドシートの選手リスト
-
     function openSheetImportModal() {
       closeModal('playerModal');
       document.getElementById('sheetImportModal').classList.add('active');
       document.getElementById('sheetImportActions').style.display = 'none';
-      document.getElementById('sheetImportBody').innerHTML = `
-        <div class="sheet-loading">
-          <div class="spinner"></div>
-          <p>スプレッドシートを読み込み中...</p>
-        </div>`;
+      document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><div class="spinner"></div><p>\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...</p></div>';
 
-      // fetchでCSVを取得（CORS対応のためno-corsでなくcors modeで試みる）
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(SHEET_CSV_URL)}`;
-
+      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_CSV_URL);
       fetch(proxyUrl)
-        .then(res => {
-          if (!res.ok) throw new Error('fetch failed');
-          return res.text();
-        })
+        .then(res => { if (!res.ok) throw new Error('fetch failed'); return res.text(); })
         .then(csv => {
           sheetPlayers = parseSheetCsv(csv);
           if (sheetPlayers.length === 0) {
-            document.getElementById('sheetImportBody').innerHTML = `
-              <div class="sheet-loading">
-                <p style="color:var(--accent-red)">⚠️ 選手データを読み込めませんでした。<br>スプレッドシートが公開設定になっているか確認してください。</p>
-              </div>`;
+            document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><p style="color:var(--accent-red)">\u26a0\ufe0f \u9078\u624b\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002<br>\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u304c\u516c\u958b\u8a2d\u5b9a\u306b\u306a\u3063\u3066\u3044\u308b\u304b\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002</p></div>';
             return;
           }
           renderSheetPlayerList();
           document.getElementById('sheetImportActions').style.display = 'flex';
         })
         .catch(err => {
-          document.getElementById('sheetImportBody').innerHTML = `
-            <div class="sheet-loading">
-              <p style="color:var(--accent-red)">⚠️ 読み込みに失敗しました。<br>インターネット接続を確認してください。</p>
-            </div>`;
-          console.warn('Sheet fetch error:', err);
+          document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><p style="color:var(--accent-red)">\u26a0\ufe0f \u8aad\u307f\u8fbc\u307f\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002<br>\u30a4\u30f3\u30bf\u30fc\u30cd\u30c3\u30c8\u63a5\u7d9a\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002</p></div>';
+          console.warn(err);
         });
     }
 
     function renderSheetPlayerList() {
-      const allNew = sheetPlayers.filter(p => !state.players.includes(p.name));
-      const html = `
-        <div class="sheet-select-all-row">
-          <label>
-            <input type="checkbox" id="selectAllSheet" onchange="toggleSelectAll(this.checked)">
-            すべて選択（未追加のみ）
-          </label>
-          <span style="font-size:0.72rem;color:var(--text-muted);">${sheetPlayers.length}名</span>
-        </div>
-        <div class="sheet-player-list">
-          ${sheetPlayers.map((p, i) => {
-            const alreadyAdded = state.players.includes(p.name);
-            return `
-              <label class="sheet-player-item" for="sp-${i}">
-                <input type="checkbox" id="sp-${i}" value="${escHtml(p.name)}"
-                  ${alreadyAdded ? 'disabled' : ''}>
-                <span class="sheet-player-name">${escHtml(p.name)}</span>
-                ${alreadyAdded ? '<span class="sheet-already-added">追加済</span>' : ''}
-              </label>`;
-          }).join('')}
-        </div>`;
-      document.getElementById('sheetImportBody').innerHTML = html;
+      let rows = sheetPlayers.map((p, i) => {
+        const added = state.players.includes(p.name);
+        return '<label class="sheet-player-item" for="sp-' + i + '">'
+          + '<input type="checkbox" id="sp-' + i + '" value="' + escHtml(p.name) + '"' + (added ? ' disabled' : '') + '>'
+          + '<span class="sheet-player-name">' + escHtml(p.name) + '</span>'
+          + (added ? '<span class="sheet-already-added">\u8ffd\u52a0\u6e08</span>' : '')
+          + '</label>';
+      }).join('');
+
+      document.getElementById('sheetImportBody').innerHTML =
+        '<div class="sheet-select-all-row">'
+        + '<label><input type="checkbox" id="selectAllSheet" onchange="toggleSelectAll(this.checked)">'
+        + '\u3059\u3079\u3066\u9078\u629e\uff08\u672a\u8ffd\u52a0\u306e\u307f\uff09</label>'
+        + '<span style="font-size:0.72rem;color:var(--text-muted);">' + sheetPlayers.length + '\u540d</span>'
+        + '</div>'
+        + '<div class="sheet-player-list">' + rows + '</div>';
     }
 
     function toggleSelectAll(checked) {
@@ -1274,532 +413,307 @@
     function importSelectedPlayers() {
       const checked = document.querySelectorAll('#sheetImportBody input[type="checkbox"]:not(:disabled):checked');
       let added = 0;
-      checked.forEach(cb => {
-        if (cb.id === 'selectAllSheet') return;
-        if (addPlayerOne(cb.value)) added++;
-      });
+      checked.forEach(cb => { if (cb.id !== 'selectAllSheet' && addPlayerOne(cb.value)) added++; });
       if (added > 0) {
-        saveState();
-        render();
+        saveState(); render();
         closeModal('sheetImportModal');
-        showToast(`👤 ${added}名を追加しました`);
+        showToast('\uD83D\uDC64 ' + added + '\u540d\u3092\u8ffd\u52a0\u3057\u307e\u3057\u305f');
       } else {
-        showToast('⚠️ 選手を選択してください');
+        showToast('\u26a0\ufe0f \u9078\u624b\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044');
       }
     }
 
-    function removePlayer(name) {
-      if (!confirm(`「${name}」を削除しますか？\n全試合のデータも削除されます。`)) return;
-
-      state.players = state.players.filter(p => p !== name);
-      state.matches.forEach(match => {
-        ['前半', '後半'].forEach(half => {
-          delete match.appearances[half][name];
-        });
-      });
-
-      saveState();
-      render();
-      showToast(`🗑️ ${name} を削除しました`);
-    }
-
-    // ===== Match Management =====
+    // ===== Match =====
     function openMatchModal() {
       document.getElementById('matchModal').classList.add('active');
       setTimeout(() => document.getElementById('matchNameInput').focus(), 300);
     }
-
     function addMatch() {
       const nameInput = document.getElementById('matchNameInput');
       const opponentInput = document.getElementById('matchOpponentInput');
       const timeInput = document.getElementById('matchTimeInput');
-
       const name = nameInput.value.trim();
-      if (!name) {
-        showToast('⚠️ 試合名を入力してください');
-        return;
-      }
-
-      const appearances = { '前半': {}, '後半': {} };
-      state.players.forEach(player => {
-        appearances['前半'][player] = 'none';
-        appearances['後半'][player] = 'none';
-      });
-
+      if (!name) { showToast('\u26a0\ufe0f \u8a66\u5408\u540d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044'); return; }
+      const appearances = {'\u524d\u534a':{},'\u5f8c\u534a':{}};
+      state.players.forEach(p => { appearances['\u524d\u534a'][p]='none'; appearances['\u5f8c\u534a'][p]='none'; });
       state.matches.push({
-        id: generateId(),
-        name: name,
+        id: generateId(), name: name,
         opponent: opponentInput.value.trim(),
         time: timeInput.value.trim(),
         appearances: appearances,
-        formation: {
-          '前半': { df: 2, mf: 3, fw: 2 },
-          '後半': { df: 2, mf: 3, fw: 2 }
-        }
+        formation: {'\u524d\u534a':{df:2,mf:3,fw:2},'\u5f8c\u534a':{df:2,mf:3,fw:2}}
       });
-
-      nameInput.value = '';
-      opponentInput.value = '';
-      timeInput.value = '';
+      nameInput.value = ''; opponentInput.value = ''; timeInput.value = '';
       closeModal('matchModal');
-      saveState();
-      render();
-      showToast(`🏟️ ${name} を追加しました`);
+      saveState(); render();
+      showToast('\uD83C\uDFDF\uFE0F ' + name + ' \u3092\u8ffd\u52a0\u3057\u307e\u3057\u305f');
     }
-
     function removeMatch(matchId) {
       const match = state.matches.find(m => m.id === matchId);
       if (!match) return;
-      if (!confirm(`「${match.name}」を削除しますか？`)) return;
-
+      if (!confirm('\u300c' + match.name + '\u300d\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f')) return;
       state.matches = state.matches.filter(m => m.id !== matchId);
-      saveState();
-      render();
-      showToast(`🗑️ ${match.name} を削除しました`);
+      saveState(); render();
+      showToast('\uD83D\uDDD1\uFE0F ' + match.name + ' \u3092\u524a\u9664\u3057\u307e\u3057\u305f');
     }
-
     function updateMatchField(matchId, field, value) {
       const match = state.matches.find(m => m.id === matchId);
-      if (match) {
-        match[field] = value;
-        saveState();
-        renderSummaryBar();
-      }
+      if (match) { match[field] = value; saveState(); renderSummaryBar(); }
     }
 
-    // ===== Formation Management =====
+    // ===== Formation =====
     function updateFormation(matchId, half, pos, delta) {
       const match = state.matches.find(m => m.id === matchId);
       if (!match) return;
-      if (!match.formation) match.formation = { '前半': {df:2,mf:3,fw:2}, '後半': {df:2,mf:3,fw:2} };
+      if (!match.formation) match.formation = {'\u524d\u534a':{df:2,mf:3,fw:2},'\u5f8c\u534a':{df:2,mf:3,fw:2}};
       if (!match.formation[half]) match.formation[half] = {df:2,mf:3,fw:2};
-
       const f = match.formation[half];
       const total = f.df + f.mf + f.fw;
       const newVal = f[pos] + delta;
-
-      // 0〜6の範囲、かつ合計7以下（GK1固定なので合計7）
       if (newVal < 0) return;
       if (delta > 0 && total >= 7) return;
       f[pos] = newVal;
-
       saveState();
-      // ピッチ図だけ更新（テーブル再描画不要）
       updatePitchSvg(matchId, half);
-      // バッジ更新
-      const badge = document.getElementById(`formation-badge-${matchId}-${half === '前半' ? '1' : '2'}`);
-      if (badge) badge.textContent = `${f.df}-${f.mf}-${f.fw}`;
-      // カウント表示更新
+      const halfIdx = half === '\u524d\u534a' ? '1' : '2';
+      const badge = document.getElementById('formation-badge-' + matchId + '-' + halfIdx);
+      if (badge) badge.textContent = 'GK-' + f.df + '-' + f.mf + '-' + f.fw;
       ['df','mf','fw'].forEach(p => {
-        const el = document.getElementById(`f-${matchId}-${half}-${p}`);
+        const el = document.getElementById('f-' + matchId + '-' + half + '-' + p);
         if (el) el.textContent = match.formation[half][p];
       });
     }
-
     function updatePitchSvg(matchId, half) {
       const match = state.matches.find(m => m.id === matchId);
       if (!match) return;
-      const svgId = `pitch-svg-${matchId}-${half === '前半' ? '1' : '2'}`;
+      const svgId = 'pitch-svg-' + matchId + '-' + (half === '\u524d\u534a' ? '1' : '2');
       const el = document.getElementById(svgId);
       if (el) el.innerHTML = buildPitchContent(match.formation[half] || {df:2,mf:3,fw:2});
     }
-
     function buildPitchContent(f) {
-      const df = f.df || 0, mf = f.mf || 0, fw = f.fw || 0;
-      const W = 140, H = 200;
-      // 各ラインのY座標（攻撃方向=上）
-      const yGk = H - 20;
-      const yDf = H - 65;
-      const yMf = H - 115;
-      const yFw = H - 158;
-
-      function dots(count, y, color, label) {
-        if (count === 0) return '';
-        const spacing = W / (count + 1);
-        let out = '';
-        for (let i = 0; i < count; i++) {
-          const x = spacing * (i + 1);
-          out += `<circle cx="${x}" cy="${y}" r="8" fill="${color}" opacity="0.9"/>`;
-          out += `<text x="${x}" y="${y + 4.5}" text-anchor="middle" font-size="7" font-weight="700" fill="#0a0e1a">${label}</text>`;
+      const df = f.df||0, mf = f.mf||0, fw = f.fw||0;
+      const W=140, H=200;
+      const yGk=H-20, yDf=H-65, yMf=H-115, yFw=H-158;
+      function dots(count,y,color,label) {
+        if (count===0) return '';
+        const sp=W/(count+1); let out='';
+        for (let i=0;i<count;i++) {
+          const x=sp*(i+1);
+          out+='<circle cx="'+x+'" cy="'+y+'" r="8" fill="'+color+'" opacity="0.9"/>';
+          out+='<text x="'+x+'" y="'+(y+4.5)+'" text-anchor="middle" font-size="7" font-weight="700" fill="#0a0e1a">'+label+'</text>';
         }
         return out;
       }
-
-      return `
-        <!-- Pitch background -->
-        <rect x="0" y="0" width="${W}" height="${H}" fill="#1a3a2a"/>
-        <!-- Field lines -->
-        <rect x="8" y="8" width="${W-16}" height="${H-16}" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
-        <!-- Center line -->
-        <line x1="8" y1="${H/2}" x2="${W-8}" y2="${H/2}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <!-- Center circle -->
-        <circle cx="${W/2}" cy="${H/2}" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-        <!-- Penalty area top -->
-        <rect x="32" y="8" width="${W-64}" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <!-- Penalty area bottom -->
-        <rect x="32" y="${H-38}" width="${W-64}" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-        <!-- Players -->
-        ${dots(1, yGk, '#fbbf24', 'GK')}
-        ${dots(df, yDf, '#60a5fa', 'DF')}
-        ${dots(mf, yMf, '#34d399', 'MF')}
-        ${dots(fw, yFw, '#f87171', 'FW')}
-      `;
+      return '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="#1a3a2a"/>'
+        +'<rect x="8" y="8" width="'+(W-16)+'" height="'+(H-16)+'" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>'
+        +'<line x1="8" y1="'+(H/2)+'" x2="'+(W-8)+'" y2="'+(H/2)+'" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
+        +'<circle cx="'+(W/2)+'" cy="'+(H/2)+'" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>'
+        +'<rect x="32" y="8" width="'+(W-64)+'" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
+        +'<rect x="32" y="'+(H-38)+'" width="'+(W-64)+'" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
+        +dots(1,yGk,'#fbbf24','GK')
+        +dots(df,yDf,'#60a5fa','DF')
+        +dots(mf,yMf,'#34d399','MF')
+        +dots(fw,yFw,'#f87171','FW');
     }
 
     function renderFormationSection(match) {
-      const halves = ['前半', '後半'];
+      const halves = ['\u524d\u534a','\u5f8c\u534a'];
       let halvesHtml = halves.map((half, idx) => {
         const f = (match.formation && match.formation[half]) ? match.formation[half] : {df:2,mf:3,fw:2};
-        const labelClass = idx === 1 ? 'second' : '';
-        const badgeId = `formation-badge-${match.id}-${idx + 1}`;
-        const svgId = `pitch-svg-${match.id}-${idx + 1}`;
-
-        const spinnerHtml = (pos, labelClass, colorVar) => `
-          <div class="formation-field">
-            <label class="${labelClass}-label">${pos.toUpperCase()}</label>
-            <div class="formation-num">
-              <button onclick="updateFormation('${match.id}','${half}','${pos}',-1)">−</button>
-              <span id="f-${match.id}-${half}-${pos}">${f[pos]}</span>
-              <button onclick="updateFormation('${match.id}','${half}','${pos}',1)">＋</button>
-            </div>
-          </div>`;
-
-        return `
-          <div class="formation-half-block">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              <span class="formation-half-label ${labelClass}">${half}</span>
-              <span class="formation-badge" id="${badgeId}">GK-${f.df}-${f.mf}-${f.fw}</span>
-            </div>
-            <div class="pitch-wrap">
-              <svg id="${svgId}" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">
-                ${buildPitchContent(f)}
-              </svg>
-            </div>
-            <div class="formation-inputs">
-              ${spinnerHtml('df', 'df', '--accent-cyan')}
-              ${spinnerHtml('mf', 'mf', '--accent-green')}
-              ${spinnerHtml('fw', 'fw', '--accent-red')}
-            </div>
-          </div>`;
+        const labelClass = idx===1 ? 'second' : '';
+        const badgeId = 'formation-badge-'+match.id+'-'+(idx+1);
+        const svgId = 'pitch-svg-'+match.id+'-'+(idx+1);
+        function spinner(pos, lblClass) {
+          return '<div class="formation-field">'
+            +'<label class="'+lblClass+'-label">'+pos.toUpperCase()+'</label>'
+            +'<div class="formation-num">'
+            +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',-1)">&minus;</button>'
+            +'<span id="f-'+match.id+'-'+half+'-'+pos+'">'+f[pos]+'</span>'
+            +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',1)">&#xFF0B;</button>'
+            +'</div></div>';
+        }
+        return '<div class="formation-half-block">'
+          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+          +'<span class="formation-half-label '+labelClass+'">'+half+'</span>'
+          +'<span class="formation-badge" id="'+badgeId+'">GK-'+f.df+'-'+f.mf+'-'+f.fw+'</span>'
+          +'</div>'
+          +'<div class="pitch-wrap">'
+          +'<svg id="'+svgId+'" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">'
+          +buildPitchContent(f)
+          +'</svg></div>'
+          +'<div class="formation-inputs">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
+          +'</div>';
       }).join('');
-
-      return `
-        <div class="formation-section">
-          <div class="formation-title">🧩 フォーメーション</div>
-          <div class="formation-halves">
-            ${halvesHtml}
-          </div>
-        </div>`;
+      return '<div class="formation-section"><div class="formation-title">&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</div>'
+        +'<div class="formation-halves">'+halvesHtml+'</div></div>';
     }
 
-    // ===== Appearance Management =====
+    // ===== Appearance =====
     function cycleStatus(matchId, half, playerName) {
       const match = state.matches.find(m => m.id === matchId);
       if (!match) return;
-
       const current = match.appearances[half][playerName] || 'none';
-      const cycle = { 'none': 'play', 'play': 'gk', 'gk': 'none' };
+      const cycle = {'none':'play','play':'gk','gk':'none'};
       match.appearances[half][playerName] = cycle[current];
-
-      saveState();
-      render();
+      saveState(); render();
     }
-
     function getStatusDisplay(status) {
-      if (status === 'play') return '○';
-      if (status === 'gk') return 'GK';
+      if (status==='play') return '&#x25CB;';
+      if (status==='gk') return 'GK';
       return '';
     }
 
     // ===== Counting =====
     function countPlayerTotal(playerName) {
-      let count = 0;
-      state.matches.forEach(match => {
-        ['前半', '後半'].forEach(half => {
-          const s = match.appearances[half][playerName];
-          if (s === 'play' || s === 'gk') count++;
-        });
-      });
+      let count=0;
+      state.matches.forEach(m => { ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { const s=m.appearances[h][playerName]; if(s==='play'||s==='gk') count++; }); });
       return count;
     }
-
     function countPlayerInMatch(matchId, playerName) {
       const match = state.matches.find(m => m.id === matchId);
       if (!match) return 0;
-      let count = 0;
-      ['前半', '後半'].forEach(half => {
-        const s = match.appearances[half][playerName];
-        if (s === 'play' || s === 'gk') count++;
-      });
+      let count=0;
+      ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { const s=match.appearances[h][playerName]; if(s==='play'||s==='gk') count++; });
       return count;
     }
 
     // ===== Edit Mode =====
     function toggleEditMode() {
       state.editMode = !state.editMode;
-      document.getElementById('editToggle').classList.toggle('active', state.editMode);
-      document.getElementById('editToggle').textContent = state.editMode ? '✏️ 完了' : '✏️ 編集';
+      const btn = document.getElementById('editToggle');
+      btn.classList.toggle('active', state.editMode);
+      btn.textContent = state.editMode ? '&#x270F;&#xFE0F; \u5b8c\u4e86' : '&#x270F;&#xFE0F; \u7de8\u96c6';
       render();
     }
 
     // ===== Modal =====
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('active');
-    }
-
-    // Close modals on overlay click
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
-      overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeModal(overlay.id);
-      });
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });
     });
-
-    // Enter key support for modals
-    document.getElementById('playerNameInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') addPlayer();
-    });
-    document.getElementById('matchTimeInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') addMatch();
-    });
+    document.getElementById('playerNameInput').addEventListener('keydown', e => { if (e.key==='Enter') addPlayer(); });
+    document.getElementById('matchTimeInput').addEventListener('keydown', e => { if (e.key==='Enter') addMatch(); });
 
     // ===== Rendering =====
     function renderSummaryBar() {
       const bar = document.getElementById('summaryBar');
-      if (state.players.length === 0) {
-        bar.innerHTML = '<span style="font-size:0.72rem;color:var(--text-muted);">👤 選手を追加してください</span>';
-        return;
-      }
-
-      const maxPossible = state.matches.length * 2;
-
+      if (state.players.length===0) { bar.innerHTML='<span style="font-size:0.72rem;color:var(--text-muted);">\uD83D\uDC64 \u9078\u624b\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</span>'; return; }
+      const max = state.matches.length * 2;
       bar.innerHTML = state.players.map(player => {
         const count = countPlayerTotal(player);
-        let countClass = '';
-        if (maxPossible > 0) {
-          const ratio = count / maxPossible;
-          if (ratio >= 0.6) countClass = 'high';
-          else if (ratio < 0.3) countClass = 'low';
-        }
-        return `<div class="summary-chip">
-          <span>${player}</span>
-          <span class="count ${countClass}">${count}</span>
-        </div>`;
+        let cls='';
+        if (max>0) { const r=count/max; if(r>=0.6) cls='high'; else if(r<0.3) cls='low'; }
+        return '<div class="summary-chip"><span>'+escHtml(player)+'</span><span class="count '+cls+'">'+count+'</span></div>';
       }).join('');
     }
 
     function renderMatches() {
       const main = document.getElementById('mainContent');
-
-      if (state.matches.length === 0 && state.players.length === 0) {
-        main.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">⚽</div>
-            <p>まず選手と試合を追加してスタート！</p>
-            <button class="btn btn-success" onclick="openPlayerModal()">👤 選手を追加</button>
-          </div>`;
+      if (state.matches.length===0 && state.players.length===0) {
+        main.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26BD;</div><p>\u307e\u305a\u9078\u624b\u3068\u8a66\u5408\u3092\u8ffd\u52a0\u3057\u3066\u30b9\u30bf\u30fc\u30c8\uff01</p><button class="btn btn-success" onclick="openPlayerModal()">\uD83D\uDC64 \u9078\u624b\u3092\u8ffd\u52a0</button></div>';
         return;
       }
-
-      if (state.matches.length === 0) {
-        main.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">🏟️</div>
-            <p>試合を追加してください</p>
-            <button class="btn btn-primary" onclick="openMatchModal()">🏟️ 試合を追加</button>
-          </div>`;
+      if (state.matches.length===0) {
+        main.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F3DF;&#xFE0F;</div><p>\u8a66\u5408\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</p><button class="btn btn-primary" onclick="openMatchModal()">\uD83C\uDFDF\uFE0F \u8a66\u5408\u3092\u8ffd\u52a0</button></div>';
         return;
       }
-
-      let html = '';
-
-      // Match Cards
-      state.matches.forEach(match => {
-        html += renderMatchCard(match);
-      });
-
-      // Total Summary
-      if (state.players.length > 0) {
-        html += renderTotalSummary();
-      }
-
-      // Data actions
-      html += `
-        <div class="data-actions">
-          <button class="btn btn-ghost btn-sm" onclick="exportData()">📤 エクスポート</button>
-          <button class="btn btn-ghost btn-sm" onclick="importData()">📥 インポート</button>
-          <button class="btn btn-danger btn-sm" onclick="resetAll()">🗑️ 全削除</button>
-        </div>`;
-
+      let html='';
+      state.matches.forEach(m => { html += renderMatchCard(m); });
+      if (state.players.length>0) html += renderTotalSummary();
+      html += '<div class="data-actions"><button class="btn btn-ghost btn-sm" onclick="exportData()">&#x1F4E4; \u30a8\u30af\u30b9\u30dd\u30fc\u30c8</button><button class="btn btn-ghost btn-sm" onclick="importData()">&#x1F4E5; \u30a4\u30f3\u30dd\u30fc\u30c8</button><button class="btn btn-danger btn-sm" onclick="resetAll()">\uD83D\uDDD1\uFE0F \u5168\u524a\u9664</button></div>';
       main.innerHTML = html;
     }
 
     function renderMatchCard(match) {
       const editClass = state.editMode ? 'edit-mode' : '';
-
-      let editRow = '';
+      let editRow='';
       if (state.editMode) {
-        editRow = `
-          <div class="match-edit-row">
-            <input type="text" value="${escHtml(match.name)}" placeholder="試合名"
-              onchange="updateMatchField('${match.id}', 'name', this.value)" style="flex:1.2">
-            <input type="text" value="${escHtml(match.opponent)}" placeholder="対戦相手"
-              onchange="updateMatchField('${match.id}', 'opponent', this.value)" style="flex:1">
-            <input type="text" value="${escHtml(match.time)}" placeholder="時間"
-              onchange="updateMatchField('${match.id}', 'time', this.value)" style="flex:0.6">
-          </div>`;
+        editRow='<div class="match-edit-row">'
+          +'<input type="text" value="'+escHtml(match.name)+'" placeholder="\u8a66\u5408\u540d" onchange="updateMatchField(\''+match.id+'\',\'name\',this.value)" style="flex:1.2">'
+          +'<input type="text" value="'+escHtml(match.opponent)+'" placeholder="\u5bfe\u6226\u76f8\u624b" onchange="updateMatchField(\''+match.id+'\',\'opponent\',this.value)" style="flex:1">'
+          +'<input type="text" value="'+escHtml(match.time)+'" placeholder="\u6642\u9593" onchange="updateMatchField(\''+match.id+'\',\'time\',this.value)" style="flex:0.6">'
+          +'</div>';
       }
-
-      // Build table
       let playerHeaders = state.players.map(p => {
-        const delBtn = `<button class="player-delete" onclick="event.stopPropagation(); removePlayer('${escHtml(p)}')">×</button>`;
-        return `<th class="player-col">${escHtml(p)}${delBtn}</th>`;
+        const delBtn='<button class="player-delete" onclick="event.stopPropagation();removePlayer(\''+escHtml(p)+'\')">&times;</button>';
+        return '<th class="player-col">'+escHtml(p)+delBtn+'</th>';
       }).join('');
-
-      const halves = ['前半', '後半'];
-      let rows = '';
-
-      halves.forEach((half, idx) => {
-        const halfClass = idx === 1 ? 'second-half' : '';
-        let cells = state.players.map(player => {
-          const status = match.appearances[half][player] || 'none';
-          const display = getStatusDisplay(status);
-          return `<td class="cell" data-status="${status}"
-                    onclick="cycleStatus('${match.id}', '${half}', '${escHtml(player)}')">
-                    <div class="cell-content">${display}</div>
-                  </td>`;
+      const halves=['\u524d\u534a','\u5f8c\u534a'];
+      let rows='';
+      halves.forEach((half,idx) => {
+        const halfClass=idx===1?'second-half':'';
+        let cells=state.players.map(player => {
+          const status=match.appearances[half][player]||'none';
+          const display=getStatusDisplay(status);
+          return '<td class="cell" data-status="'+status+'" onclick="cycleStatus(\''+match.id+'\',\''+half+'\',\''+escHtml(player)+'\')">'
+            +'<div class="cell-content">'+display+'</div></td>';
         }).join('');
-        rows += `<tr><td class="half-label ${halfClass}">${half}</td>${cells}</tr>`;
+        rows+='<tr><td class="half-label '+halfClass+'">'+half+'</td>'+cells+'</tr>';
       });
-
-      // Per-match count row
-      let countCells = state.players.map(player => {
-        const c = countPlayerInMatch(match.id, player);
-        return `<td>${c > 0 ? c : '-'}</td>`;
+      let countCells=state.players.map(player => {
+        const c=countPlayerInMatch(match.id,player);
+        return '<td>'+(c>0?c:'-')+'</td>';
       }).join('');
-      rows += `<tr class="count-row"><td class="count-label">出場</td>${countCells}</tr>`;
-
-      const metaTime = match.time ? `<span>🕐 ${escHtml(match.time)}</span>` : '';
-      const metaOpponent = match.opponent ? `<span>VS ${escHtml(match.opponent)}</span>` : '';
-
-      return `
-        <div class="match-card ${editClass}" id="match-${match.id}">
-          <div class="match-header">
-            <div class="match-info">
-              <div class="match-name">${escHtml(match.name)}</div>
-              <div class="match-meta">${metaTime}${metaOpponent}</div>
-            </div>
-            <div class="match-actions">
-              ${state.editMode ? `<button class="btn btn-danger btn-sm" onclick="removeMatch('${match.id}')">削除</button>` : ''}
-            </div>
-          </div>
-          ${editRow}
-          ${renderFormationSection(match)}
-          <div class="table-wrapper">
-            <table class="match-table">
-              <thead>
-                <tr>
-                  <th style="min-width:50px;"></th>
-                  ${playerHeaders}
-                </tr>
-              </thead>
-              <tbody>
-                ${rows}
-              </tbody>
-            </table>
-          </div>
-        </div>`;
+      rows+='<tr class="count-row"><td class="count-label">\u51fa\u5834</td>'+countCells+'</tr>';
+      const metaTime=match.time?'<span>&#x1F550; '+escHtml(match.time)+'</span>':'';
+      const metaOpp=match.opponent?'<span>VS '+escHtml(match.opponent)+'</span>':'';
+      return '<div class="match-card '+editClass+'" id="match-'+match.id+'">'
+        +'<div class="match-header"><div class="match-info"><div class="match-name">'+escHtml(match.name)+'</div><div class="match-meta">'+metaTime+metaOpp+'</div></div>'
+        +'<div class="match-actions">'+(state.editMode?'<button class="btn btn-danger btn-sm" onclick="removeMatch(\''+match.id+'\')">\u524a\u9664</button>':'')+'</div></div>'
+        +editRow
+        +renderFormationSection(match)
+        +'<div class="table-wrapper"><table class="match-table"><thead><tr><th style="min-width:50px;"></th>'+playerHeaders+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+        +'</div>';
     }
 
     function renderTotalSummary() {
-      const maxPossible = state.matches.length * 2;
-      const items = state.players.map(player => {
-        const count = countPlayerTotal(player);
-        let cls = 'zero';
-        if (maxPossible > 0) {
-          const ratio = count / maxPossible;
-          if (ratio >= 0.7) cls = 'top';
-          else if (ratio >= 0.4) cls = 'mid';
-          else if (ratio > 0) cls = 'low';
-        }
-        return `<div class="total-item">
-          <span class="player-name">${escHtml(player)}</span>
-          <span class="total-count ${cls}">${count}</span>
-        </div>`;
+      const max=state.matches.length*2;
+      const items=state.players.map(player => {
+        const count=countPlayerTotal(player);
+        let cls='zero';
+        if (max>0) { const r=count/max; if(r>=0.7) cls='top'; else if(r>=0.4) cls='mid'; else if(r>0) cls='low'; }
+        return '<div class="total-item"><span class="player-name">'+escHtml(player)+'</span><span class="total-count '+cls+'">'+count+'</span></div>';
       }).join('');
-
-      return `
-        <div class="total-section">
-          <div class="section-title">📊 出場回数サマリー</div>
-          <div class="total-card">
-            <div class="total-header">全${state.matches.length}試合 合計出場回数</div>
-            <div class="total-grid">${items}</div>
-          </div>
-        </div>`;
+      return '<div class="total-section"><div class="section-title">&#x1F4CA; \u51fa\u5834\u56de\u6570\u30b5\u30de\u30ea\u30fc</div>'
+        +'<div class="total-card"><div class="total-header">\u5168'+state.matches.length+'\u8a66\u5408 \u5408\u8a08\u51fa\u5834\u56de\u6570</div>'
+        +'<div class="total-grid">'+items+'</div></div></div>';
     }
 
-    function render() {
-      renderSummaryBar();
-      renderMatches();
-    }
+    function render() { renderSummaryBar(); renderMatches(); }
 
-    function escHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
-
-    // ===== Data Export / Import =====
+    // ===== Data Export/Import =====
     function exportData() {
-      const data = JSON.stringify({ players: state.players, matches: state.matches }, null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `soccer_tournament_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('📤 データをエクスポートしました');
+      const data=JSON.stringify({players:state.players,matches:state.matches},null,2);
+      const blob=new Blob([data],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url;
+      a.download='soccer_tournament_'+new Date().toISOString().slice(0,10)+'.json';
+      a.click(); URL.revokeObjectURL(url);
+      showToast('&#x1F4E4; \u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u3057\u307e\u3057\u305f');
     }
-
     function importData() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
+      const input=document.createElement('input'); input.type='file'; input.accept='.json';
+      input.onchange=(e) => {
+        const file=e.target.files[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=(ev) => {
           try {
-            const data = JSON.parse(ev.target.result);
-            if (data.players && data.matches) {
-              state.players = data.players;
-              state.matches = data.matches;
-              saveState();
-              render();
-              showToast('📥 データをインポートしました');
-            } else {
-              showToast('⚠️ 無効なデータ形式です');
-            }
-          } catch(err) {
-            showToast('⚠️ ファイルの読み込みに失敗しました');
-          }
+            const data=JSON.parse(ev.target.result);
+            if (data.players && data.matches) { state.players=data.players; state.matches=data.matches; saveState(); render(); showToast('&#x1F4E5; \u30a4\u30f3\u30dd\u30fc\u30c8\u3057\u307e\u3057\u305f'); }
+            else showToast('\u26a0\ufe0f \u7121\u52b9\u306a\u30c7\u30fc\u30bf\u5f62\u5f0f\u3067\u3059');
+          } catch(err) { showToast('\u26a0\ufe0f \u8aad\u307f\u8fbc\u307f\u5931\u6557'); }
         };
         reader.readAsText(file);
       };
       input.click();
     }
-
     function resetAll() {
-      if (!confirm('全てのデータを削除しますか？\nこの操作は取り消せません。')) return;
-      state.players = [];
-      state.matches = [];
-      state.editMode = false;
-      document.getElementById('editToggle').classList.remove('active');
-      document.getElementById('editToggle').textContent = '✏️ 編集';
-      saveState();
-      render();
-      showToast('🗑️ 全データを削除しました');
+      if (!confirm('\u5168\u3066\u306e\u30c7\u30fc\u30bf\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f\n\u3053\u306e\u64cd\u4f5c\u306f\u53d6\u308a\u6d88\u305b\u307e\u305b\u3093\u3002')) return;
+      state.players=[]; state.matches=[]; state.editMode=false;
+      const btn=document.getElementById('editToggle');
+      btn.classList.remove('active'); btn.textContent='&#x270F;&#xFE0F; \u7de8\u96c6';
+      saveState(); render();
+      showToast('\uD83D\uDDD1\uFE0F \u5168\u30c7\u30fc\u30bf\u3092\u524a\u9664\u3057\u307e\u3057\u305f');
     }
 
     // ===== Init =====
