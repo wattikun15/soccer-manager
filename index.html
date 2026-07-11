@@ -42,6 +42,7 @@
     .summary-chip .count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; background:var(--accent-primary); color:white; border-radius:50px; font-size:0.65rem; font-weight:700; }
     .summary-chip .count.high { background:var(--accent-green); }
     .summary-chip .count.low { background:var(--accent-amber); }
+    .summary-chip .count.both { background:linear-gradient(135deg, #a855f7, #ec4899); color:white; border:none; }
     .summary-chip .player-edit-btn { background:none; border:none; color:var(--accent-cyan); font-size:0.75rem; cursor:pointer; padding:0 2px; }
     .summary-chip .player-del-btn { background:none; border:none; color:var(--accent-red); font-size:0.9rem; cursor:pointer; padding:0 2px; line-height:1; }
 
@@ -708,6 +709,7 @@
         const count = counts.total;
         let cls='';
         if (max>0) { const r=count/max; if(r>=0.6) cls='high'; else if(r<0.3) cls='low'; }
+        if (counts.fp > 0 && counts.gk > 0) cls = 'both';
         const details = counts.gk > 0 ? (counts.fp > 0 ? `FP${counts.fp}:GK${counts.gk}` : `GK${counts.gk}`) : counts.fp;
         let actions = '';
         if (state.editMode) {
