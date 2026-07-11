@@ -249,14 +249,8 @@
     <div class="modal" style="max-width: 320px; margin:0 auto;">
       <div class="modal-handle"></div>
       <h3 style="text-align:center; font-size:1.1rem; margin-bottom:20px; color:var(--text-primary);" id="statusModalTitle">選手状態</h3>
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px;">
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('1')">1</button>
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('2')">2</button>
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('3')">3</button>
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('4')">4</button>
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('5')">5</button>
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('6')">6</button>
-        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px; grid-column:2;" onclick="setStatusFromModal('7')">7</button>
+      <div id="statusModalButtons" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; justify-content:center;">
+        <!-- Dynamic buttons go here -->
       </div>
       <div style="display:flex; gap:12px;">
         <button class="btn btn-primary" style="flex:1; background:rgba(245,158,11,0.15); color:var(--accent-amber); font-size:1.1rem; height:48px;" onclick="setStatusFromModal('gk')">GK</button>
@@ -516,6 +510,21 @@
       currentStatusHalf = half;
       currentStatusPlayer = playerName;
       document.getElementById('statusModalTitle').textContent = escHtml(playerName) + ' (' + half + ')';
+      
+      const match = state.matches.find(m => m.id === matchId);
+      const f = (match && match.formation && match.formation[half]) ? match.formation[half] : {df:3,mf:3,fw:1};
+      
+      let html = '';
+      function addBtns(prefix, count, color, bg) {
+        for(let i=1; i<=count; i++) {
+           html += '<button class="btn btn-ghost" style="background:'+bg+'; color:'+color+'; font-size:0.95rem; font-weight:800; height:44px; flex:1 1 calc(33% - 8px); min-width:64px;" onclick="setStatusFromModal(\''+prefix+i+'\')">'+prefix+i+'</button>';
+        }
+      }
+      addBtns('DF', f.df, '#60a5fa', 'rgba(96,165,250,0.15)');
+      addBtns('MF', f.mf, '#34d399', 'rgba(52,211,153,0.15)');
+      addBtns('FW', f.fw, '#f87171', 'rgba(248,113,113,0.15)');
+      
+      document.getElementById('statusModalButtons').innerHTML = html;
       document.getElementById('statusModal').classList.add('active');
     }
     function setStatusFromModal(val) {
@@ -528,8 +537,14 @@
     }
     function getStatusDisplay(status) {
       if (status==='play') return '&#x25CB;';
-      if (status>='1' && status<='7') return status;
       if (status==='gk') return 'GK';
+      if (status>='1' && status<='7') return status;
+      if (status.startsWith('DF') || status.startsWith('MF') || status.startsWith('FW')) {
+         let color = '#60a5fa';
+         if (status.startsWith('MF')) color = '#34d399';
+         if (status.startsWith('FW')) color = '#f87171';
+         return `<span style="color:${color}; font-size:0.8rem; letter-spacing:-0.5px;">${status}</span>`;
+      }
       return '';
     }
 
@@ -539,8 +554,10 @@
       state.matches.forEach(m => { 
         ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
           const s=m.appearances[h][playerName]; 
-          if(s==='play') fp++; 
-          else if(s==='gk') gk++; 
+          if (s) {
+            if (s==='play' || (s>='1' && s<='7') || s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW')) fp++; 
+            else if(s==='gk') gk++;
+          }
         }); 
       });
       return { fp, gk, total: fp+gk };
@@ -551,8 +568,10 @@
       let fp=0, gk=0;
       ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
         const s=match.appearances[h][playerName]; 
-        if(s==='play') fp++; 
-        else if(s==='gk') gk++; 
+        if (s) {
+          if (s==='play' || (s>='1' && s<='7') || s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW')) fp++; 
+          else if(s==='gk') gk++;
+        }
       });
       return { fp, gk, total: fp+gk };
     }
@@ -562,7 +581,7 @@
       state.editMode = !state.editMode;
       const btn = document.getElementById('editToggle');
       btn.classList.toggle('active', state.editMode);
-      btn.textContent = state.editMode ? '&#x270F;&#xFE0F; \u5b8c\u4e86' : '&#x270F;&#xFE0F; \u7de8\u96c6';
+      btn.innerHTML = state.editMode ? '&#x270F;&#xFE0F; \u5b8c\u4e86' : '&#x270F;&#xFE0F; \u7de8\u96c6';
       render();
     }
 
@@ -628,7 +647,9 @@
         let cells=state.players.map(player => {
           const status=match.appearances[half][player]||'none';
           const display=getStatusDisplay(status);
-          const cellStatus = (status>='1' && status<='7') || status==='play' ? 'play' : status;
+          let cellStatus = 'none';
+          if (status==='gk') cellStatus = 'gk';
+          else if (status==='play' || (status>='1' && status<='7') || status.startsWith('DF') || status.startsWith('MF') || status.startsWith('FW')) cellStatus = 'play';
           return '<td class="cell" data-status="'+cellStatus+'" onclick="openStatusModal(\''+match.id+'\',\''+half+'\',\''+escHtml(player)+'\')">'
             +'<div class="cell-content">'+display+'</div></td>';
         }).join('');
