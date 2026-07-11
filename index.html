@@ -157,7 +157,7 @@
     /* Formation Section */
     .formation-section { border-top:1px solid var(--border-subtle); padding:14px 16px; background:rgba(10,14,26,0.4); }
     .formation-title { font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:12px; }
-    .formation-halves { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .formation-halves { display:block; }
     .formation-half-block { display:flex; flex-direction:column; gap:8px; }
     .formation-half-label { font-size:0.7rem; font-weight:700; color:var(--text-accent); margin-bottom:2px; }
     .formation-half-label.second { color:var(--accent-cyan); }
@@ -504,9 +504,27 @@
         +dots(fw,yFw,'#f87171','FW');
     }
 
+    function toggleFormationHalf(matchId, half) {
+      if (!state.activeFormationHalf) state.activeFormationHalf = {};
+      state.activeFormationHalf[matchId] = half;
+      render();
+    }
+
     function renderFormationSection(match) {
+      if (!state.activeFormationHalf) state.activeFormationHalf = {};
       const halves = ['\u524d\u534a','\u5f8c\u534a'];
+      const activeHalf = state.activeFormationHalf[match.id] || halves[0];
+      
+      const tabs = halves.map(half => {
+        const isActive = half === activeHalf;
+        const bg = isActive ? 'var(--accent-primary)' : 'transparent';
+        const color = isActive ? 'white' : 'var(--text-muted)';
+        return '<button class="btn btn-ghost" style="flex:1; background:'+bg+'; color:'+color+'; font-size:0.85rem; border-radius:50px; padding:6px;" onclick="toggleFormationHalf(\''+match.id+'\', \''+half+'\')">'+half+'</button>';
+      }).join('');
+      const tabsHtml = '<div style="display:flex; gap:4px; background:rgba(30,41,59,0.5); padding:4px; border-radius:50px; margin-bottom:12px; max-width:200px; margin-left:auto; margin-right:auto;">'+tabs+'</div>';
+
       let halvesHtml = halves.map((half, idx) => {
+        if (half !== activeHalf) return '';
         const f = (match.formation && match.formation[half]) ? match.formation[half] : {df:3,mf:3,fw:1};
         const labelClass = idx===1 ? 'second' : '';
         const badgeId = 'formation-badge-'+match.id+'-'+(idx+1);
@@ -520,20 +538,19 @@
             +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',1)">&#xFF0B;</button>'
             +'</div></div>';
         }
-        return '<div class="formation-half-block">'
-          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
-          +'<span class="formation-half-label '+labelClass+'">'+half+'</span>'
+        return '<div class="formation-half-block" style="max-width:240px; margin:0 auto;">'
+          +'<div style="display:flex;align-items:center;justify-content:center;margin-bottom:8px">'
           +'<span class="formation-badge" id="'+badgeId+'">GK-'+f.df+'-'+f.mf+'-'+f.fw+'</span>'
           +'</div>'
           +'<div class="pitch-wrap">'
           +'<svg id="'+svgId+'" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">'
           +buildPitchContent(f, match, half)
           +'</svg></div>'
-          +'<div class="formation-inputs">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
+          +'<div class="formation-inputs" style="justify-content:center; margin-top:8px;">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
           +'</div>';
       }).join('');
-      return '<div class="formation-section"><div class="formation-title">&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</div>'
-        +'<div class="formation-halves">'+halvesHtml+'</div></div>';
+      return '<div class="formation-section"><div class="formation-title" style="text-align:center;">&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</div>'
+        +tabsHtml+'<div class="formation-halves">'+halvesHtml+'</div></div>';
     }
 
     // ===== Position Select =====
