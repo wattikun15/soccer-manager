@@ -173,7 +173,7 @@
     .formation-num span { min-width:18px; text-align:center; font-size:0.9rem; font-weight:800; color:var(--text-primary); }
     .formation-badge { padding:2px 8px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:50px; font-size:0.68rem; font-weight:700; color:var(--accent-secondary); margin-left:auto; white-space:nowrap; }
     .pitch-wrap { display:flex; flex-direction:column; gap:4px; }
-    .pitch-svg-container { width:100%; border-radius:var(--radius-sm); overflow:hidden; }
+    .pitch-svg-container { width:100%; height:auto; display:block; border-radius:var(--radius-sm); overflow:hidden; }
 
 
 
@@ -241,6 +241,16 @@
         <button class="btn btn-ghost" onclick="closeModal('matchModal')">キャンセル</button>
         <button class="btn btn-primary" onclick="addMatch()">追加</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ポジション選択モーダル -->
+  <div class="modal-overlay" id="posModal">
+    <div class="modal" style="max-width: 340px; margin:0 auto; padding-bottom:calc(30px + env(safe-area-inset-bottom,0px));">
+      <div class="modal-handle"></div>
+      <h3 style="text-align:center; font-size:1.1rem; margin-bottom:20px; color:var(--text-primary);" id="posModalTitle">選手を選択</h3>
+      <div id="posModalList" style="display:flex; flex-direction:column; max-height:60vh; overflow-y:auto; gap:4px; margin-bottom:12px; padding:4px;"></div>
+      <button class="btn btn-ghost" style="width:100%; justify-content:center; padding:12px; border:1px solid var(--border-glass); color:var(--text-muted);" onclick="closeModal('posModal')">キャンセル</button>
     </div>
   </div>
 
@@ -425,35 +435,60 @@
       let gkPlayer = '';
       if (match && half) {
         let fpList = [];
+        const posOrder = {'D':1, 'M':2, 'F':3};
         state.players.forEach(p => {
           const s = match.appearances[half][p];
           if (s === 'gk') gkPlayer = p;
-          else if (s >= '1' && s <= '7') fpList.push({ name: p, num: parseInt(s) });
-          else if (s === 'play') fpList.push({ name: p, num: 99 });
+          else if (s && (s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW'))) {
+             fpList.push({ name: p, s: s });
+          }
+          else if (s >= '1' && s <= '7') {
+             fpList.push({ name: p, s: 'Z' + s });
+          }
+          else if (s === 'play') fpList.push({ name: p, s: 'Z99' });
         });
-        fpList.sort((a,b) => a.num - b.num);
+        fpList.sort((a,b) => {
+          const aGrp = posOrder[a.s.charAt(0)] || 9;
+          const bGrp = posOrder[b.s.charAt(0)] || 9;
+          if (aGrp !== bGrp) return aGrp - bGrp;
+          return a.s.localeCompare(b.s);
+        });
         playPlayers = fpList.map(x => x.name);
       }
       function shortName(n) { return n ? n.split(/[ \u3000]/)[0].substring(0,4) : ''; }
 
       let pIdx = 0;
-      function dots(count,y,color,isGk) {
+      function dots(count,y,color,prefix) {
         if (count===0) return '';
         const sp=W/(count+1); let out='';
         for (let i=0;i<count;i++) {
           const x=sp*(i+1);
-          let label = '';
-          if (isGk) {
-            label = gkPlayer ? shortName(gkPlayer) : 'GK';
+          let posStr = prefix === 'GK' ? 'gk' : prefix + (i+1);
+          let assignedPlayer = '';
+          if (prefix === 'GK') {
+            assignedPlayer = gkPlayer;
           } else {
-            label = (pIdx < playPlayers.length) ? shortName(playPlayers[pIdx]) : '';
-            pIdx++;
+            let p = state.players.find(p => match.appearances[half][p] === posStr);
+            if (p) {
+              assignedPlayer = p;
+            } else {
+              while (pIdx < playPlayers.length) {
+                let checkP = playPlayers[pIdx++];
+                let s = match.appearances[half][checkP];
+                if (s !== 'gk' && !s.startsWith('DF') && !s.startsWith('MF') && !s.startsWith('FW')) {
+                  assignedPlayer = checkP;
+                  break;
+                }
+              }
+            }
           }
-          out+='<circle cx="'+x+'" cy="'+y+'" r="14" fill="'+color+'" opacity="0.95"/>';
-          if (label) {
-            const fs = label.length > 3 ? 5 : 6.5;
-            out+='<text x="'+x+'" y="'+(y+2.5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="#0a0e1a">'+escHtml(label)+'</text>';
-          }
+          let label = assignedPlayer ? shortName(assignedPlayer) : (prefix === 'GK' ? 'GK' : posStr);
+          out+='<g onclick="openPositionModal(\''+match.id+'\',\''+half+'\',\''+posStr+'\')" style="cursor:pointer; -webkit-tap-highlight-color:transparent;">'
+              +'<circle cx="'+x+'" cy="'+y+'" r="15" fill="'+color+'" opacity="0.95"/>';
+          const fs = label.length > 3 ? 5 : 6.5;
+          const textCol = assignedPlayer ? '#0a0e1a' : 'rgba(10,14,26,0.6)';
+          out+='<text x="'+x+'" y="'+(y+2.5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="'+textCol+'">'+escHtml(label)+'</text>'
+              +'</g>';
         }
         return out;
       }
@@ -463,10 +498,10 @@
         +'<circle cx="'+(W/2)+'" cy="'+(H/2)+'" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>'
         +'<rect x="32" y="8" width="'+(W-64)+'" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
         +'<rect x="32" y="'+(H-38)+'" width="'+(W-64)+'" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
-        +dots(1,yGk,'#fbbf24',true)
-        +dots(df,yDf,'#60a5fa',false)
-        +dots(mf,yMf,'#34d399',false)
-        +dots(fw,yFw,'#f87171',false);
+        +dots(1,yGk,'#fbbf24','GK')
+        +dots(df,yDf,'#60a5fa','DF')
+        +dots(mf,yMf,'#34d399','MF')
+        +dots(fw,yFw,'#f87171','FW');
     }
 
     function renderFormationSection(match) {
@@ -499,6 +534,59 @@
       }).join('');
       return '<div class="formation-section"><div class="formation-title">&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</div>'
         +'<div class="formation-halves">'+halvesHtml+'</div></div>';
+    }
+
+    // ===== Position Select =====
+    let currentPosMatch = '';
+    let currentPosHalf = '';
+    let currentPosStr = '';
+    function openPositionModal(matchId, half, posStr) {
+      currentPosMatch = matchId;
+      currentPosHalf = half;
+      currentPosStr = posStr;
+      const displayPos = posStr === 'gk' ? 'GK' : posStr;
+      document.getElementById('posModalTitle').textContent = displayPos + ' の選手を選択';
+      
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return;
+      
+      let html = `<button class="btn btn-ghost" style="width:100%; justify-content:center; padding:12px; margin-bottom:12px; border:1px solid rgba(239,68,68,0.3); color:var(--accent-red);" onclick="clearPosition()">はずす (クリア)</button>`;
+      
+      state.players.forEach(p => {
+         const currentStatus = match.appearances[half][p] || 'none';
+         const isAssignedToThis = currentStatus === posStr;
+         const label = currentStatus === 'none' ? '' : ` <span style="font-size:0.7rem; color:var(--text-muted);">(${currentStatus})</span>`;
+         const bg = isAssignedToThis ? 'rgba(99,102,241,0.15)' : 'transparent';
+         const border = isAssignedToThis ? 'border:1px solid var(--accent-primary);' : 'border:1px solid var(--border-glass);';
+         html += `<button class="btn btn-ghost" style="width:100%; justify-content:flex-start; padding:12px; margin-bottom:6px; background:${bg}; ${border}" onclick="setPlayerForPosition('${escHtml(p)}')">${escHtml(p)}${label}</button>`;
+      });
+      document.getElementById('posModalList').innerHTML = html;
+      document.getElementById('posModal').classList.add('active');
+    }
+    function setPlayerForPosition(playerName) {
+      const match = state.matches.find(m => m.id === currentPosMatch);
+      if (match) {
+        state.players.forEach(p => {
+           if (match.appearances[currentPosHalf][p] === currentPosStr) {
+              match.appearances[currentPosHalf][p] = 'none';
+           }
+        });
+        match.appearances[currentPosHalf][playerName] = currentPosStr;
+        saveState(); render();
+      }
+      closeModal('posModal');
+    }
+    function clearPosition() {
+      const match = state.matches.find(m => m.id === currentPosMatch);
+      if (match) {
+        state.players.forEach(p => {
+           if (match.appearances[currentPosHalf][p] === currentPosStr) {
+              match.appearances[currentPosHalf][p] = 'none';
+           }
+        });
+        saveState(); render();
+      }
+      closeModal('posModal');
     }
 
     // ===== Appearance =====
