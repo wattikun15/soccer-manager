@@ -748,6 +748,132 @@
       padding-bottom: 20px;
     }
 
+    /* ===== Formation Section ===== */
+    .formation-section {
+      border-top: 1px solid var(--border-subtle);
+      padding: 14px 16px;
+      background: rgba(10, 14, 26, 0.4);
+    }
+
+    .formation-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 12px;
+    }
+
+    .formation-halves {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .formation-half-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .formation-half-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-accent);
+      margin-bottom: 2px;
+    }
+
+    .formation-half-label.second {
+      color: var(--accent-cyan);
+    }
+
+    .formation-inputs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .formation-field {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .formation-field label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .formation-field label.fw-label { color: #f87171; }
+    .formation-field label.mf-label { color: #34d399; }
+    .formation-field label.df-label { color: #60a5fa; }
+
+    .formation-num {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .formation-num button {
+      width: 22px;
+      height: 22px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 50%;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .formation-num button:active {
+      background: var(--accent-primary);
+      color: white;
+      transform: scale(0.9);
+    }
+
+    .formation-num span {
+      min-width: 18px;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .formation-badge {
+      padding: 2px 8px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 50px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent-secondary);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    /* ===== Pitch SVG ===== */
+    .pitch-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .pitch-svg-container {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
     /* ===== Responsive ===== */
     @media (min-width: 600px) {
       html { font-size: 15px; }
@@ -859,6 +985,12 @@
           const parsed = JSON.parse(saved);
           state.players = parsed.players || [];
           state.matches = parsed.matches || [];
+          // 既存データにformation未設定の試合があれば初期値補完
+          state.matches.forEach(m => {
+            if (!m.formation) {
+              m.formation = { '前半': {df:2,mf:3,fw:2}, '後半': {df:2,mf:3,fw:2} };
+            }
+          });
         }
       } catch(e) {
         console.warn('読み込みに失敗しました', e);
@@ -953,7 +1085,11 @@
         name: name,
         opponent: opponentInput.value.trim(),
         time: timeInput.value.trim(),
-        appearances: appearances
+        appearances: appearances,
+        formation: {
+          '前半': { df: 2, mf: 3, fw: 2 },
+          '後半': { df: 2, mf: 3, fw: 2 }
+        }
       });
 
       nameInput.value = '';
@@ -983,6 +1119,131 @@
         saveState();
         renderSummaryBar();
       }
+    }
+
+    // ===== Formation Management =====
+    function updateFormation(matchId, half, pos, delta) {
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return;
+      if (!match.formation) match.formation = { '前半': {df:2,mf:3,fw:2}, '後半': {df:2,mf:3,fw:2} };
+      if (!match.formation[half]) match.formation[half] = {df:2,mf:3,fw:2};
+
+      const f = match.formation[half];
+      const total = f.df + f.mf + f.fw;
+      const newVal = f[pos] + delta;
+
+      // 0〜6の範囲、かつ合計7以下（GK1固定なので合計7）
+      if (newVal < 0) return;
+      if (delta > 0 && total >= 7) return;
+      f[pos] = newVal;
+
+      saveState();
+      // ピッチ図だけ更新（テーブル再描画不要）
+      updatePitchSvg(matchId, half);
+      // バッジ更新
+      const badge = document.getElementById(`formation-badge-${matchId}-${half === '前半' ? '1' : '2'}`);
+      if (badge) badge.textContent = `${f.df}-${f.mf}-${f.fw}`;
+      // カウント表示更新
+      ['df','mf','fw'].forEach(p => {
+        const el = document.getElementById(`f-${matchId}-${half}-${p}`);
+        if (el) el.textContent = match.formation[half][p];
+      });
+    }
+
+    function updatePitchSvg(matchId, half) {
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return;
+      const svgId = `pitch-svg-${matchId}-${half === '前半' ? '1' : '2'}`;
+      const el = document.getElementById(svgId);
+      if (el) el.innerHTML = buildPitchContent(match.formation[half] || {df:2,mf:3,fw:2});
+    }
+
+    function buildPitchContent(f) {
+      const df = f.df || 0, mf = f.mf || 0, fw = f.fw || 0;
+      const W = 140, H = 200;
+      // 各ラインのY座標（攻撃方向=上）
+      const yGk = H - 20;
+      const yDf = H - 65;
+      const yMf = H - 115;
+      const yFw = H - 158;
+
+      function dots(count, y, color, label) {
+        if (count === 0) return '';
+        const spacing = W / (count + 1);
+        let out = '';
+        for (let i = 0; i < count; i++) {
+          const x = spacing * (i + 1);
+          out += `<circle cx="${x}" cy="${y}" r="8" fill="${color}" opacity="0.9"/>`;
+          out += `<text x="${x}" y="${y + 4.5}" text-anchor="middle" font-size="7" font-weight="700" fill="#0a0e1a">${label}</text>`;
+        }
+        return out;
+      }
+
+      return `
+        <!-- Pitch background -->
+        <rect x="0" y="0" width="${W}" height="${H}" fill="#1a3a2a"/>
+        <!-- Field lines -->
+        <rect x="8" y="8" width="${W-16}" height="${H-16}" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <!-- Center line -->
+        <line x1="8" y1="${H/2}" x2="${W-8}" y2="${H/2}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <!-- Center circle -->
+        <circle cx="${W/2}" cy="${H/2}" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <!-- Penalty area top -->
+        <rect x="32" y="8" width="${W-64}" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <!-- Penalty area bottom -->
+        <rect x="32" y="${H-38}" width="${W-64}" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <!-- Players -->
+        ${dots(1, yGk, '#fbbf24', 'GK')}
+        ${dots(df, yDf, '#60a5fa', 'DF')}
+        ${dots(mf, yMf, '#34d399', 'MF')}
+        ${dots(fw, yFw, '#f87171', 'FW')}
+      `;
+    }
+
+    function renderFormationSection(match) {
+      const halves = ['前半', '後半'];
+      let halvesHtml = halves.map((half, idx) => {
+        const f = (match.formation && match.formation[half]) ? match.formation[half] : {df:2,mf:3,fw:2};
+        const labelClass = idx === 1 ? 'second' : '';
+        const badgeId = `formation-badge-${match.id}-${idx + 1}`;
+        const svgId = `pitch-svg-${match.id}-${idx + 1}`;
+
+        const spinnerHtml = (pos, labelClass, colorVar) => `
+          <div class="formation-field">
+            <label class="${labelClass}-label">${pos.toUpperCase()}</label>
+            <div class="formation-num">
+              <button onclick="updateFormation('${match.id}','${half}','${pos}',-1)">−</button>
+              <span id="f-${match.id}-${half}-${pos}">${f[pos]}</span>
+              <button onclick="updateFormation('${match.id}','${half}','${pos}',1)">＋</button>
+            </div>
+          </div>`;
+
+        return `
+          <div class="formation-half-block">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              <span class="formation-half-label ${labelClass}">${half}</span>
+              <span class="formation-badge" id="${badgeId}">GK-${f.df}-${f.mf}-${f.fw}</span>
+            </div>
+            <div class="pitch-wrap">
+              <svg id="${svgId}" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">
+                ${buildPitchContent(f)}
+              </svg>
+            </div>
+            <div class="formation-inputs">
+              ${spinnerHtml('df', 'df', '--accent-cyan')}
+              ${spinnerHtml('mf', 'mf', '--accent-green')}
+              ${spinnerHtml('fw', 'fw', '--accent-red')}
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="formation-section">
+          <div class="formation-title">🧩 フォーメーション</div>
+          <div class="formation-halves">
+            ${halvesHtml}
+          </div>
+        </div>`;
     }
 
     // ===== Appearance Management =====
@@ -1186,6 +1447,7 @@
             </div>
           </div>
           ${editRow}
+          ${renderFormationSection(match)}
           <div class="table-wrapper">
             <table class="match-table">
               <thead>
