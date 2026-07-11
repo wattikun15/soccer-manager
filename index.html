@@ -244,6 +244,27 @@
     </div>
   </div>
 
+  <!-- 状態選択モーダル -->
+  <div class="modal-overlay" id="statusModal">
+    <div class="modal" style="max-width: 320px; margin:0 auto;">
+      <div class="modal-handle"></div>
+      <h3 style="text-align:center; font-size:1.1rem; margin-bottom:20px; color:var(--text-primary);" id="statusModalTitle">選手状態</h3>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px;">
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('1')">1</button>
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('2')">2</button>
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('3')">3</button>
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('4')">4</button>
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('5')">5</button>
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px;" onclick="setStatusFromModal('6')">6</button>
+        <button class="btn btn-ghost" style="background:rgba(34,197,94,0.1); color:var(--accent-green); font-size:1.2rem; height:48px; grid-column:2;" onclick="setStatusFromModal('7')">7</button>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button class="btn btn-primary" style="flex:1; background:rgba(245,158,11,0.15); color:var(--accent-amber); font-size:1.1rem; height:48px;" onclick="setStatusFromModal('gk')">GK</button>
+        <button class="btn btn-ghost" style="flex:1; background:rgba(255,255,255,0.05); color:var(--text-muted); font-size:1rem; height:48px;" onclick="setStatusFromModal('none')">クリア</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -409,10 +430,15 @@
       let playPlayers = [];
       let gkPlayer = '';
       if (match && half) {
+        let fpList = [];
         state.players.forEach(p => {
-          if (match.appearances[half][p] === 'play') playPlayers.push(p);
-          if (match.appearances[half][p] === 'gk') gkPlayer = p;
+          const s = match.appearances[half][p];
+          if (s === 'gk') gkPlayer = p;
+          else if (s >= '1' && s <= '7') fpList.push({ name: p, num: parseInt(s) });
+          else if (s === 'play') fpList.push({ name: p, num: 99 });
         });
+        fpList.sort((a,b) => a.num - b.num);
+        playPlayers = fpList.map(x => x.name);
       }
       function shortName(n) { return n ? n.split(/[ \u3000]/)[0].substring(0,4) : ''; }
 
@@ -482,16 +508,27 @@
     }
 
     // ===== Appearance =====
-    function cycleStatus(matchId, half, playerName) {
-      const match = state.matches.find(m => m.id === matchId);
-      if (!match) return;
-      const current = match.appearances[half][playerName] || 'none';
-      const cycle = {'none':'play','play':'gk','gk':'none'};
-      match.appearances[half][playerName] = cycle[current];
-      saveState(); render();
+    let currentStatusMatch = '';
+    let currentStatusHalf = '';
+    let currentStatusPlayer = '';
+    function openStatusModal(matchId, half, playerName) {
+      currentStatusMatch = matchId;
+      currentStatusHalf = half;
+      currentStatusPlayer = playerName;
+      document.getElementById('statusModalTitle').textContent = escHtml(playerName) + ' (' + half + ')';
+      document.getElementById('statusModal').classList.add('active');
+    }
+    function setStatusFromModal(val) {
+      const match = state.matches.find(m => m.id === currentStatusMatch);
+      if (match) {
+        match.appearances[currentStatusHalf][currentStatusPlayer] = val;
+        saveState(); render();
+      }
+      closeModal('statusModal');
     }
     function getStatusDisplay(status) {
       if (status==='play') return '&#x25CB;';
+      if (status>='1' && status<='7') return status;
       if (status==='gk') return 'GK';
       return '';
     }
@@ -591,7 +628,8 @@
         let cells=state.players.map(player => {
           const status=match.appearances[half][player]||'none';
           const display=getStatusDisplay(status);
-          return '<td class="cell" data-status="'+status+'" onclick="cycleStatus(\''+match.id+'\',\''+half+'\',\''+escHtml(player)+'\')">'
+          const cellStatus = (status>='1' && status<='7') || status==='play' ? 'play' : status;
+          return '<td class="cell" data-status="'+cellStatus+'" onclick="openStatusModal(\''+match.id+'\',\''+half+'\',\''+escHtml(player)+'\')">'
             +'<div class="cell-content">'+display+'</div></td>';
         }).join('');
         rows+='<tr><td class="half-label '+halfClass+'">'+half+'</td>'+cells+'</tr>';
