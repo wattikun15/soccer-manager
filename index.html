@@ -728,7 +728,7 @@
       let html='';
       state.matches.forEach(m => { html += renderMatchCard(m); });
       if (state.players.length>0) html += renderTotalSummary();
-      html += '<div class="data-actions"><button class="btn btn-ghost btn-sm" onclick="exportData()">&#x1F4E4; \u30a8\u30af\u30b9\u30dd\u30fc\u30c8</button><button class="btn btn-ghost btn-sm" onclick="importData()">&#x1F4E5; \u30a4\u30f3\u30dd\u30fc\u30c8</button><button class="btn btn-danger btn-sm" onclick="resetAll()">\uD83D\uDDD1\uFE0F \u5168\u524a\u9664</button></div>';
+      html += '<div class="data-actions"><button class="btn btn-danger btn-sm" onclick="resetAll()">\uD83D\uDDD1\uFE0F \u5168\u524a\u9664</button></div>';
       main.innerHTML = html;
     }
 
@@ -801,32 +801,7 @@
 
     function render() { renderSummaryBar(); renderMatches(); }
 
-    // ===== Data Export/Import =====
-    function exportData() {
-      const data=JSON.stringify({players:state.players,matches:state.matches},null,2);
-      const blob=new Blob([data],{type:'application/json'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a'); a.href=url;
-      a.download='soccer_tournament_'+new Date().toISOString().slice(0,10)+'.json';
-      a.click(); URL.revokeObjectURL(url);
-      showToast('&#x1F4E4; \u30a8\u30af\u30b9\u30dd\u30fc\u30c8\u3057\u307e\u3057\u305f');
-    }
-    function importData() {
-      const input=document.createElement('input'); input.type='file'; input.accept='.json';
-      input.onchange=(e) => {
-        const file=e.target.files[0]; if(!file) return;
-        const reader=new FileReader();
-        reader.onload=(ev) => {
-          try {
-            const data=JSON.parse(ev.target.result);
-            if (data.players && data.matches) { state.players=data.players; state.matches=data.matches; saveState(); render(); showToast('&#x1F4E5; \u30a4\u30f3\u30dd\u30fc\u30c8\u3057\u307e\u3057\u305f'); }
-            else showToast('\u26a0\ufe0f \u7121\u52b9\u306a\u30c7\u30fc\u30bf\u5f62\u5f0f\u3067\u3059');
-          } catch(err) { showToast('\u26a0\ufe0f \u8aad\u307f\u8fbc\u307f\u5931\u6557'); }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-    }
+    // ===== Data Management =====
     function resetAll() {
       if (!confirm('\u5168\u3066\u306e\u30c7\u30fc\u30bf\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f\n\u3053\u306e\u64cd\u4f5c\u306f\u53d6\u308a\u6d88\u305b\u307e\u305b\u3093\u3002')) return;
       state.players=[]; state.matches=[]; state.editMode=false;
