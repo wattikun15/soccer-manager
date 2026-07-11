@@ -134,9 +134,9 @@
 
     /* FAB */
     .fab-container { position:fixed; bottom:calc(20px + env(safe-area-inset-bottom,0px)); right:20px; z-index:50; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
-    .fab { width:52px; height:52px; border:none; border-radius:50%; font-size:1.3rem; cursor:pointer; box-shadow:var(--shadow-lg); display:flex; align-items:center; justify-content:center; transition:all var(--transition); }
+    .fab { width:auto; padding:0 24px; height:52px; border:none; border-radius:50px; font-size:1.05rem; font-weight:700; cursor:pointer; box-shadow:var(--shadow-lg); display:flex; align-items:center; justify-content:center; transition:all var(--transition); letter-spacing:0.02em; }
     .fab:active { transform:scale(0.9); }
-    .fab-match { background:linear-gradient(135deg,var(--accent-primary),#4f46e5); color:white; box-shadow:var(--shadow-lg),var(--shadow-glow); }
+    .fab-match { background:linear-gradient(135deg,var(--accent-primary),#4f46e5); color:white; box-shadow:0 4px 15px rgba(99,102,241,0.4); }
 
     /* Edit Toggle */
     .edit-toggle { position:relative; }
@@ -191,7 +191,6 @@
       <h1 class="app-title">&#x26BD; 出場管理</h1>
       <div class="header-actions">
         <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 編集</button>
-        <button class="btn btn-primary btn-sm" onclick="openMatchModal()">&#x1F3DF;&#xFE0F;+</button>
       </div>
     </div>
     <div class="summary-bar" id="summaryBar"></div>
@@ -200,7 +199,7 @@
   <main class="main" id="mainContent"></main>
 
   <div class="fab-container">
-    <button class="fab fab-match" onclick="openMatchModal()" title="試合を追加">&#xFF0B;</button>
+    <button class="fab fab-match" onclick="openMatchModal()" title="試合を追加">&#xFF0B; 試合</button>
   </div>
 
   <!-- 選手追加モーダル -->
