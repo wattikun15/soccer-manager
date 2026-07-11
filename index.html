@@ -238,12 +238,27 @@
     <div class="modal" style="max-height:90dvh;overflow-y:auto;">
       <div class="modal-handle"></div>
       <h2>&#x1F4CB; スプレッドシートから読み込み</h2>
-      <div id="sheetImportBody">
-        <div class="sheet-loading">
-          <div class="spinner"></div>
-          <p>読み込み中...</p>
+
+      <!-- URL入力フォーム -->
+      <div id="sheetUrlForm">
+        <div class="form-group" style="margin-bottom:8px">
+          <label for="sheetUrlInput">Google スプレッドシートのURL</label>
+          <input type="url" id="sheetUrlInput"
+            placeholder="https://docs.google.com/spreadsheets/d/..."
+            style="font-size:0.75rem;"
+            enterkeyhint="go">
         </div>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">
+          &#x26A0;&#xFE0F; スプレッドシートを<strong style="color:var(--text-secondary)">「リンクを知っている全員が閲覧可」</strong>に設定してください。<br>
+          名前が入力されている列（4列目）を自動で読み込みます。
+        </p>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="fetchSheetByUrl()">
+          &#x1F50D; 読み込む
+        </button>
       </div>
+
+      <div id="sheetImportBody" style="margin-top:12px;"></div>
+
       <div class="modal-actions" id="sheetImportActions" style="display:none;">
         <button class="btn btn-ghost" onclick="closeModal('sheetImportModal')">キャンセル</button>
         <button class="btn btn-success" onclick="importSelectedPlayers()">&#x2705; 選択した選手を追加</button>
@@ -279,8 +294,6 @@
 
   <script>
     const STORAGE_KEY = 'soccer8_tournament_v2';
-    const SHEET_ID = '12TIoUIqGUDNPwpfDOgzXli7Np27Rd9zAwI1rcVUGRIg';
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/export?format=csv';
 
     let state = { players: [], matches: [], editMode: false };
     let sheetPlayers = [];
@@ -297,7 +310,7 @@
           state.players = p.players || [];
           state.matches = p.matches || [];
           state.matches.forEach(m => {
-            if (!m.formation) m.formation = { '\u524d\u534a': {df:2,mf:3,fw:2}, '\u5f8c\u534a': {df:2,mf:3,fw:2} };
+            if (!m.formation) m.formation = { '\u524d\u534a': {df:3,mf:3,fw:1}, '\u5f8c\u534a': {df:3,mf:3,fw:1} };
           });
         }
       } catch(e) {}
@@ -352,9 +365,8 @@
       const players = [];
       lines.forEach(line => {
         const cols = line.split(',');
-        const numCol = cols[0] ? cols[0].trim() : '';
-        const nameCol = cols[3] ? cols[3].trim() : '';
-        if (/^\d+$/.test(numCol) && nameCol && nameCol.length > 0) {
+        const nameCol = (cols[3] && cols[3].trim() !== '') ? cols[3].trim() : (cols[0] ? cols[0].trim() : '');
+        if (nameCol && nameCol !== '氏名' && nameCol !== '名前' && !/^\d+$/.test(nameCol)) {
           players.push({ name: nameCol });
         }
       });
@@ -364,10 +376,23 @@
     function openSheetImportModal() {
       closeModal('playerModal');
       document.getElementById('sheetImportModal').classList.add('active');
+      const urlInput = document.getElementById('sheetUrlInput');
+      if (urlInput) urlInput.value = '';
       document.getElementById('sheetImportActions').style.display = 'none';
-      document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><div class="spinner"></div><p>\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...</p></div>';
+      document.getElementById('sheetImportBody').innerHTML = '';
+    }
 
-      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(SHEET_CSV_URL);
+    function fetchSheetByUrl() {
+      const urlInput = document.getElementById('sheetUrlInput').value.trim();
+      if (!urlInput) { showToast('\u26a0\ufe0f URL\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044'); return; }
+      const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (!match) { showToast('\u26a0\ufe0f \u6b63\u3057\u3044URL\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044'); return; }
+      
+      document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><div class="spinner"></div><p>\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...</p></div>';
+      
+      const csvUrl = 'https://docs.google.com/spreadsheets/d/' + match[1] + '/export?format=csv';
+      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(csvUrl);
+      
       fetch(proxyUrl)
         .then(res => { if (!res.ok) throw new Error('fetch failed'); return res.text(); })
         .then(csv => {
@@ -441,7 +466,7 @@
         opponent: opponentInput.value.trim(),
         time: timeInput.value.trim(),
         appearances: appearances,
-        formation: {'\u524d\u534a':{df:2,mf:3,fw:2},'\u5f8c\u534a':{df:2,mf:3,fw:2}}
+        formation: {'\u524d\u534a':{df:3,mf:3,fw:1},'\u5f8c\u534a':{df:3,mf:3,fw:1}}
       });
       nameInput.value = ''; opponentInput.value = ''; timeInput.value = '';
       closeModal('matchModal');
@@ -465,8 +490,8 @@
     function updateFormation(matchId, half, pos, delta) {
       const match = state.matches.find(m => m.id === matchId);
       if (!match) return;
-      if (!match.formation) match.formation = {'\u524d\u534a':{df:2,mf:3,fw:2},'\u5f8c\u534a':{df:2,mf:3,fw:2}};
-      if (!match.formation[half]) match.formation[half] = {df:2,mf:3,fw:2};
+      if (!match.formation) match.formation = {'\u524d\u534a':{df:3,mf:3,fw:1},'\u5f8c\u534a':{df:3,mf:3,fw:1}};
+      if (!match.formation[half]) match.formation[half] = {df:3,mf:3,fw:1};
       const f = match.formation[half];
       const total = f.df + f.mf + f.fw;
       const newVal = f[pos] + delta;
@@ -488,19 +513,41 @@
       if (!match) return;
       const svgId = 'pitch-svg-' + matchId + '-' + (half === '\u524d\u534a' ? '1' : '2');
       const el = document.getElementById(svgId);
-      if (el) el.innerHTML = buildPitchContent(match.formation[half] || {df:2,mf:3,fw:2});
+      if (el) el.innerHTML = buildPitchContent(match.formation[half] || {df:3,mf:3,fw:1}, match, half);
     }
-    function buildPitchContent(f) {
+    function buildPitchContent(f, match, half) {
       const df = f.df||0, mf = f.mf||0, fw = f.fw||0;
       const W=140, H=200;
       const yGk=H-20, yDf=H-65, yMf=H-115, yFw=H-158;
-      function dots(count,y,color,label) {
+
+      let playPlayers = [];
+      let gkPlayer = '';
+      if (match && half) {
+        state.players.forEach(p => {
+          if (match.appearances[half][p] === 'play') playPlayers.push(p);
+          if (match.appearances[half][p] === 'gk') gkPlayer = p;
+        });
+      }
+      function shortName(n) { return n ? n.split(/[ \u3000]/)[0].substring(0,4) : ''; }
+
+      let pIdx = 0;
+      function dots(count,y,color,isGk) {
         if (count===0) return '';
         const sp=W/(count+1); let out='';
         for (let i=0;i<count;i++) {
           const x=sp*(i+1);
-          out+='<circle cx="'+x+'" cy="'+y+'" r="8" fill="'+color+'" opacity="0.9"/>';
-          out+='<text x="'+x+'" y="'+(y+4.5)+'" text-anchor="middle" font-size="7" font-weight="700" fill="#0a0e1a">'+label+'</text>';
+          let label = '';
+          if (isGk) {
+            label = gkPlayer ? shortName(gkPlayer) : 'GK';
+          } else {
+            label = (pIdx < playPlayers.length) ? shortName(playPlayers[pIdx]) : '';
+            pIdx++;
+          }
+          out+='<circle cx="'+x+'" cy="'+y+'" r="14" fill="'+color+'" opacity="0.95"/>';
+          if (label) {
+            const fs = label.length > 3 ? 5 : 6.5;
+            out+='<text x="'+x+'" y="'+(y+2.5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="#0a0e1a">'+escHtml(label)+'</text>';
+          }
         }
         return out;
       }
@@ -510,16 +557,16 @@
         +'<circle cx="'+(W/2)+'" cy="'+(H/2)+'" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>'
         +'<rect x="32" y="8" width="'+(W-64)+'" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
         +'<rect x="32" y="'+(H-38)+'" width="'+(W-64)+'" height="30" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>'
-        +dots(1,yGk,'#fbbf24','GK')
-        +dots(df,yDf,'#60a5fa','DF')
-        +dots(mf,yMf,'#34d399','MF')
-        +dots(fw,yFw,'#f87171','FW');
+        +dots(1,yGk,'#fbbf24',true)
+        +dots(df,yDf,'#60a5fa',false)
+        +dots(mf,yMf,'#34d399',false)
+        +dots(fw,yFw,'#f87171',false);
     }
 
     function renderFormationSection(match) {
       const halves = ['\u524d\u534a','\u5f8c\u534a'];
       let halvesHtml = halves.map((half, idx) => {
-        const f = (match.formation && match.formation[half]) ? match.formation[half] : {df:2,mf:3,fw:2};
+        const f = (match.formation && match.formation[half]) ? match.formation[half] : {df:3,mf:3,fw:1};
         const labelClass = idx===1 ? 'second' : '';
         const badgeId = 'formation-badge-'+match.id+'-'+(idx+1);
         const svgId = 'pitch-svg-'+match.id+'-'+(idx+1);
@@ -539,7 +586,7 @@
           +'</div>'
           +'<div class="pitch-wrap">'
           +'<svg id="'+svgId+'" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">'
-          +buildPitchContent(f)
+          +buildPitchContent(f, match, half)
           +'</svg></div>'
           +'<div class="formation-inputs">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
           +'</div>';
