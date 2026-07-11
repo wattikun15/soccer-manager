@@ -42,6 +42,8 @@
     .summary-chip .count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; background:var(--accent-primary); color:white; border-radius:50px; font-size:0.65rem; font-weight:700; }
     .summary-chip .count.high { background:var(--accent-green); }
     .summary-chip .count.low { background:var(--accent-amber); }
+    .summary-chip .player-edit-btn { background:none; border:none; color:var(--accent-cyan); font-size:0.75rem; cursor:pointer; padding:0 2px; }
+    .summary-chip .player-del-btn { background:none; border:none; color:var(--accent-red); font-size:0.9rem; cursor:pointer; padding:0 2px; line-height:1; }
 
     /* Buttons */
     .btn { display:inline-flex; align-items:center; gap:5px; padding:8px 14px; border:none; border-radius:var(--radius-sm); font-family:var(--font-main); font-size:0.82rem; font-weight:600; cursor:pointer; transition:all var(--transition); white-space:nowrap; -webkit-user-select:none; user-select:none; }
@@ -189,7 +191,6 @@
       <h1 class="app-title">&#x26BD; 出場管理</h1>
       <div class="header-actions">
         <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 編集</button>
-        <button class="btn btn-success btn-sm" onclick="openPlayerModal()">&#x1F464;+</button>
         <button class="btn btn-primary btn-sm" onclick="openMatchModal()">&#x1F3DF;&#xFE0F;+</button>
       </div>
     </div>
@@ -596,24 +597,26 @@
     // ===== Rendering =====
     function renderSummaryBar() {
       const bar = document.getElementById('summaryBar');
-      if (state.players.length===0) { bar.innerHTML='<span style="font-size:0.72rem;color:var(--text-muted);">\uD83D\uDC64 \u9078\u624b\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</span>'; return; }
       const max = state.matches.length * 2;
-      bar.innerHTML = state.players.map(player => {
+      let html = '<button class="summary-chip" onclick="openPlayerModal()" style="background:var(--accent-green); color:white; border:none; padding:4px 10px; cursor:pointer;">&#xFF0B; 選手</button>';
+      html += state.players.map(player => {
         const counts = countPlayerTotal(player);
         const count = counts.total;
         let cls='';
         if (max>0) { const r=count/max; if(r>=0.6) cls='high'; else if(r<0.3) cls='low'; }
         const details = counts.gk > 0 ? (counts.fp > 0 ? `FP${counts.fp}:GK${counts.gk}` : `GK${counts.gk}`) : counts.fp;
-        return '<div class="summary-chip"><span>'+escHtml(player)+'</span><span class="count '+cls+'" style="width:auto;min-width:20px;padding:0 6px;border-radius:10px;">'+details+'</span></div>';
+        let actions = '';
+        if (state.editMode) {
+          actions = '<button class="player-edit-btn" onclick="editPlayer(\''+escHtml(player)+'\')">&#x270F;&#xFE0F;</button>'
+                  + '<button class="player-del-btn" onclick="removePlayer(\''+escHtml(player)+'\')">&times;</button>';
+        }
+        return '<div class="summary-chip">' + actions + '<span>'+escHtml(player)+'</span><span class="count '+cls+'" style="width:auto;min-width:20px;padding:0 6px;border-radius:10px;">'+details+'</span></div>';
       }).join('');
+      bar.innerHTML = html;
     }
 
     function renderMatches() {
       const main = document.getElementById('mainContent');
-      if (state.matches.length===0 && state.players.length===0) {
-        main.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26BD;</div><p>\u307e\u305a\u9078\u624b\u3068\u8a66\u5408\u3092\u8ffd\u52a0\u3057\u3066\u30b9\u30bf\u30fc\u30c8\uff01</p><button class="btn btn-success" onclick="openPlayerModal()">\uD83D\uDC64 \u9078\u624b\u3092\u8ffd\u52a0</button></div>';
-        return;
-      }
       if (state.matches.length===0) {
         main.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F3DF;&#xFE0F;</div><p>\u8a66\u5408\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</p><button class="btn btn-primary" onclick="openMatchModal()">\uD83C\uDFDF\uFE0F \u8a66\u5408\u3092\u8ffd\u52a0</button></div>';
         return;
