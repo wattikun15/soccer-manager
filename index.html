@@ -498,16 +498,26 @@
 
     // ===== Counting =====
     function countPlayerTotal(playerName) {
-      let count=0;
-      state.matches.forEach(m => { ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { const s=m.appearances[h][playerName]; if(s==='play'||s==='gk') count++; }); });
-      return count;
+      let fp=0, gk=0;
+      state.matches.forEach(m => { 
+        ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
+          const s=m.appearances[h][playerName]; 
+          if(s==='play') fp++; 
+          else if(s==='gk') gk++; 
+        }); 
+      });
+      return { fp, gk, total: fp+gk };
     }
     function countPlayerInMatch(matchId, playerName) {
       const match = state.matches.find(m => m.id === matchId);
-      if (!match) return 0;
-      let count=0;
-      ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { const s=match.appearances[h][playerName]; if(s==='play'||s==='gk') count++; });
-      return count;
+      if (!match) return { fp:0, gk:0, total:0 };
+      let fp=0, gk=0;
+      ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
+        const s=match.appearances[h][playerName]; 
+        if(s==='play') fp++; 
+        else if(s==='gk') gk++; 
+      });
+      return { fp, gk, total: fp+gk };
     }
 
     // ===== Edit Mode =====
@@ -533,10 +543,12 @@
       if (state.players.length===0) { bar.innerHTML='<span style="font-size:0.72rem;color:var(--text-muted);">\uD83D\uDC64 \u9078\u624b\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</span>'; return; }
       const max = state.matches.length * 2;
       bar.innerHTML = state.players.map(player => {
-        const count = countPlayerTotal(player);
+        const counts = countPlayerTotal(player);
+        const count = counts.total;
         let cls='';
         if (max>0) { const r=count/max; if(r>=0.6) cls='high'; else if(r<0.3) cls='low'; }
-        return '<div class="summary-chip"><span>'+escHtml(player)+'</span><span class="count '+cls+'">'+count+'</span></div>';
+        const details = counts.gk > 0 ? (counts.fp > 0 ? `FP${counts.fp}:GK${counts.gk}` : `GK${counts.gk}`) : counts.fp;
+        return '<div class="summary-chip"><span>'+escHtml(player)+'</span><span class="count '+cls+'" style="width:auto;min-width:20px;padding:0 6px;border-radius:10px;">'+details+'</span></div>';
       }).join('');
     }
 
@@ -585,8 +597,14 @@
         rows+='<tr><td class="half-label '+halfClass+'">'+half+'</td>'+cells+'</tr>';
       });
       let countCells=state.players.map(player => {
-        const c=countPlayerInMatch(match.id,player);
-        return '<td>'+(c>0?c:'-')+'</td>';
+        const counts=countPlayerInMatch(match.id,player);
+        let label = '-';
+        if (counts.total > 0) {
+          if (counts.gk > 0 && counts.fp > 0) label = `F${counts.fp}/G${counts.gk}`;
+          else if (counts.gk > 0) label = `G${counts.gk}`;
+          else label = counts.fp;
+        }
+        return '<td>'+label+'</td>';
       }).join('');
       rows+='<tr class="count-row"><td class="count-label">\u51fa\u5834</td>'+countCells+'</tr>';
       const metaTime=match.time?'<span>&#x1F550; '+escHtml(match.time)+'</span>':'';
@@ -603,10 +621,12 @@
     function renderTotalSummary() {
       const max=state.matches.length*2;
       const items=state.players.map(player => {
-        const count=countPlayerTotal(player);
+        const counts=countPlayerTotal(player);
+        const count=counts.total;
         let cls='zero';
         if (max>0) { const r=count/max; if(r>=0.7) cls='top'; else if(r>=0.4) cls='mid'; else if(r>0) cls='low'; }
-        return '<div class="total-item"><span class="player-name">'+escHtml(player)+'</span><span class="total-count '+cls+'">'+count+'</span></div>';
+        const gkHtml = counts.gk > 0 ? `<span style="font-size:0.65rem;color:var(--text-muted);margin-right:6px;">FP:${counts.fp} GK:${counts.gk}</span>` : '';
+        return '<div class="total-item"><span class="player-name">'+escHtml(player)+'</span><div>'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div></div>';
       }).join('');
       return '<div class="total-section"><div class="section-title">&#x1F4CA; \u51fa\u5834\u56de\u6570\u30b5\u30de\u30ea\u30fc</div>'
         +'<div class="total-card"><div class="total-header">\u5168'+state.matches.length+'\u8a66\u5408 \u5408\u8a08\u51fa\u5834\u56de\u6570</div>'
