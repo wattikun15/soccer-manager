@@ -171,21 +171,7 @@
     .pitch-wrap { display:flex; flex-direction:column; gap:4px; }
     .pitch-svg-container { width:100%; border-radius:var(--radius-sm); overflow:hidden; }
 
-    /* Spreadsheet Import */
-    .sheet-import-btn { width:100%; margin-top:8px; padding:10px; background:rgba(6,182,212,0.1); border:1px dashed rgba(6,182,212,0.4); border-radius:var(--radius-sm); color:var(--accent-cyan); font-family:var(--font-main); font-size:0.8rem; font-weight:600; cursor:pointer; transition:all var(--transition); display:flex; align-items:center; justify-content:center; gap:6px; }
-    .sheet-import-btn:active { background:rgba(6,182,212,0.2); transform:scale(0.98); }
-    .sheet-player-list { max-height:300px; overflow-y:auto; margin:12px 0; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); }
-    .sheet-player-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--border-subtle); cursor:pointer; transition:background var(--transition); }
-    .sheet-player-item:last-child { border-bottom:none; }
-    .sheet-player-item:active { background:rgba(99,102,241,0.1); }
-    .sheet-player-item input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-primary); cursor:pointer; flex-shrink:0; }
-    .sheet-player-name { font-size:0.88rem; font-weight:600; color:var(--text-primary); flex:1; }
-    .sheet-already-added { font-size:0.65rem; padding:2px 7px; background:rgba(34,197,94,0.15); color:var(--accent-green); border-radius:50px; font-weight:700; }
-    .sheet-select-all-row { display:flex; align-items:center; justify-content:space-between; padding:8px 4px; margin-bottom:4px; }
-    .sheet-select-all-row label { display:flex; align-items:center; gap:8px; font-size:0.78rem; font-weight:600; color:var(--text-secondary); cursor:pointer; }
-    .sheet-loading { text-align:center; padding:32px 20px; color:var(--text-muted); font-size:0.85rem; }
-    .sheet-loading .spinner { display:inline-block; width:28px; height:28px; border:3px solid var(--border-glass); border-top-color:var(--accent-cyan); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:10px; }
-    @keyframes spin { to{transform:rotate(360deg)} }
+
 
     ::-webkit-scrollbar { width:4px; height:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
@@ -223,9 +209,7 @@
         <label for="playerNameInput">選手名を入力</label>
         <input type="text" id="playerNameInput" placeholder="例: たろう" enterkeyhint="done">
       </div>
-      <button class="sheet-import-btn" onclick="openSheetImportModal()">
-        &#x1F4CB; スプレッドシートから一括読み込み
-      </button>
+
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('playerModal')">キャンセル</button>
         <button class="btn btn-success" onclick="addPlayer()">追加</button>
@@ -233,38 +217,6 @@
     </div>
   </div>
 
-  <!-- スプレッドシート読み込みモーダル -->
-  <div class="modal-overlay" id="sheetImportModal">
-    <div class="modal" style="max-height:90dvh;overflow-y:auto;">
-      <div class="modal-handle"></div>
-      <h2>&#x1F4CB; スプレッドシートから読み込み</h2>
-
-      <!-- URL入力フォーム -->
-      <div id="sheetUrlForm">
-        <div class="form-group" style="margin-bottom:8px">
-          <label for="sheetUrlInput">Google スプレッドシートのURL</label>
-          <input type="url" id="sheetUrlInput"
-            placeholder="https://docs.google.com/spreadsheets/d/..."
-            style="font-size:0.75rem;"
-            enterkeyhint="go">
-        </div>
-        <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">
-          &#x26A0;&#xFE0F; スプレッドシートを<strong style="color:var(--text-secondary)">「リンクを知っている全員が閲覧可」</strong>に設定してください。<br>
-          名前が入力されている列（4列目）を自動で読み込みます。
-        </p>
-        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="fetchSheetByUrl()">
-          &#x1F50D; 読み込む
-        </button>
-      </div>
-
-      <div id="sheetImportBody" style="margin-top:12px;"></div>
-
-      <div class="modal-actions" id="sheetImportActions" style="display:none;">
-        <button class="btn btn-ghost" onclick="closeModal('sheetImportModal')">キャンセル</button>
-        <button class="btn btn-success" onclick="importSelectedPlayers()">&#x2705; 選択した選手を追加</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 試合追加モーダル -->
   <div class="modal-overlay" id="matchModal">
@@ -357,95 +309,6 @@
       state.matches.forEach(m => { ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { delete m.appearances[h][name]; }); });
       saveState(); render();
       showToast('\uD83D\uDDD1\uFE0F ' + name + ' \u3092\u524a\u9664\u3057\u307e\u3057\u305f');
-    }
-
-    // ===== Spreadsheet Import =====
-    function parseSheetCsv(csvText) {
-      const lines = csvText.split(/\r?\n/);
-      const players = [];
-      lines.forEach(line => {
-        const cols = line.split(',');
-        const nameCol = (cols[3] && cols[3].trim() !== '') ? cols[3].trim() : (cols[0] ? cols[0].trim() : '');
-        if (nameCol && nameCol !== '氏名' && nameCol !== '名前' && !/^\d+$/.test(nameCol)) {
-          players.push({ name: nameCol });
-        }
-      });
-      return players;
-    }
-
-    function openSheetImportModal() {
-      closeModal('playerModal');
-      document.getElementById('sheetImportModal').classList.add('active');
-      const urlInput = document.getElementById('sheetUrlInput');
-      if (urlInput) urlInput.value = '';
-      document.getElementById('sheetImportActions').style.display = 'none';
-      document.getElementById('sheetImportBody').innerHTML = '';
-    }
-
-    function fetchSheetByUrl() {
-      const urlInput = document.getElementById('sheetUrlInput').value.trim();
-      if (!urlInput) { showToast('\u26a0\ufe0f URL\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044'); return; }
-      const match = urlInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (!match) { showToast('\u26a0\ufe0f \u6b63\u3057\u3044URL\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044'); return; }
-      
-      document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><div class="spinner"></div><p>\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u3092\u8aad\u307f\u8fbc\u307f\u4e2d...</p></div>';
-      
-      const csvUrl = 'https://docs.google.com/spreadsheets/d/' + match[1] + '/export?format=csv';
-      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(csvUrl);
-      
-      fetch(proxyUrl)
-        .then(res => { if (!res.ok) throw new Error('fetch failed'); return res.text(); })
-        .then(csv => {
-          sheetPlayers = parseSheetCsv(csv);
-          if (sheetPlayers.length === 0) {
-            document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><p style="color:var(--accent-red)">\u26a0\ufe0f \u9078\u624b\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002<br>\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8\u304c\u516c\u958b\u8a2d\u5b9a\u306b\u306a\u3063\u3066\u3044\u308b\u304b\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002</p></div>';
-            return;
-          }
-          renderSheetPlayerList();
-          document.getElementById('sheetImportActions').style.display = 'flex';
-        })
-        .catch(err => {
-          document.getElementById('sheetImportBody').innerHTML = '<div class="sheet-loading"><p style="color:var(--accent-red)">\u26a0\ufe0f \u8aad\u307f\u8fbc\u307f\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002<br>\u30a4\u30f3\u30bf\u30fc\u30cd\u30c3\u30c8\u63a5\u7d9a\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002</p></div>';
-          console.warn(err);
-        });
-    }
-
-    function renderSheetPlayerList() {
-      let rows = sheetPlayers.map((p, i) => {
-        const added = state.players.includes(p.name);
-        return '<label class="sheet-player-item" for="sp-' + i + '">'
-          + '<input type="checkbox" id="sp-' + i + '" value="' + escHtml(p.name) + '"' + (added ? ' disabled' : '') + '>'
-          + '<span class="sheet-player-name">' + escHtml(p.name) + '</span>'
-          + (added ? '<span class="sheet-already-added">\u8ffd\u52a0\u6e08</span>' : '')
-          + '</label>';
-      }).join('');
-
-      document.getElementById('sheetImportBody').innerHTML =
-        '<div class="sheet-select-all-row">'
-        + '<label><input type="checkbox" id="selectAllSheet" onchange="toggleSelectAll(this.checked)">'
-        + '\u3059\u3079\u3066\u9078\u629e\uff08\u672a\u8ffd\u52a0\u306e\u307f\uff09</label>'
-        + '<span style="font-size:0.72rem;color:var(--text-muted);">' + sheetPlayers.length + '\u540d</span>'
-        + '</div>'
-        + '<div class="sheet-player-list">' + rows + '</div>';
-    }
-
-    function toggleSelectAll(checked) {
-      document.querySelectorAll('#sheetImportBody input[type="checkbox"]:not(:disabled)').forEach(cb => {
-        if (cb.id !== 'selectAllSheet') cb.checked = checked;
-      });
-    }
-
-    function importSelectedPlayers() {
-      const checked = document.querySelectorAll('#sheetImportBody input[type="checkbox"]:not(:disabled):checked');
-      let added = 0;
-      checked.forEach(cb => { if (cb.id !== 'selectAllSheet' && addPlayerOne(cb.value)) added++; });
-      if (added > 0) {
-        saveState(); render();
-        closeModal('sheetImportModal');
-        showToast('\uD83D\uDC64 ' + added + '\u540d\u3092\u8ffd\u52a0\u3057\u307e\u3057\u305f');
-      } else {
-        showToast('\u26a0\ufe0f \u9078\u624b\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044');
-      }
     }
 
     // ===== Match =====
