@@ -77,7 +77,9 @@
     .match-table th { padding:8px 6px; font-size:0.7rem; font-weight:600; color:var(--text-secondary); background:rgba(30,41,59,0.5); white-space:nowrap; position:relative; }
     .match-table th.player-col { min-width:52px; max-width:64px; }
     .match-table th .player-delete { position:absolute; top:1px; right:1px; width:14px; height:14px; font-size:8px; line-height:14px; background:rgba(239,68,68,0.5); color:white; border:none; border-radius:50%; cursor:pointer; display:none; align-items:center; justify-content:center; }
-    .edit-mode .match-table th .player-delete { display:flex; }
+    .match-table th .player-edit { position:absolute; top:1px; left:1px; width:14px; height:14px; font-size:8px; line-height:14px; background:rgba(6,182,212,0.5); color:white; border:none; border-radius:50%; cursor:pointer; display:none; align-items:center; justify-content:center; }
+    .edit-mode .match-table th .player-delete,
+    .edit-mode .match-table th .player-edit { display:flex; }
     .match-table td.half-label { padding:6px 10px; font-size:0.72rem; font-weight:700; color:var(--text-accent); background:rgba(99,102,241,0.07); white-space:nowrap; min-width:50px; text-align:left; }
     .match-table td.half-label.second-half { color:var(--accent-cyan); background:rgba(6,182,212,0.07); }
 
@@ -302,6 +304,27 @@
       closeModal('playerModal');
       saveState(); render();
       showToast('\uD83D\uDC64 ' + name + ' \u3092\u8ffd\u52a0\u3057\u307e\u3057\u305f');
+    }
+    function editPlayer(oldName) {
+      const newName = prompt('\u300c' + oldName + '\u300d\u306e\u65b0\u3057\u3044\u540d\u524d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044\u3002', oldName);
+      if (!newName || newName.trim() === '' || newName === oldName) return;
+      const n = newName.trim();
+      if (state.players.includes(n)) {
+        showToast('\u26a0\ufe0f \u3059\u3067\u306b\u540c\u3058\u540d\u524d\u306e\u9078\u624b\u304c\u3044\u307e\u3059');
+        return;
+      }
+      const idx = state.players.indexOf(oldName);
+      if (idx !== -1) state.players[idx] = n;
+      state.matches.forEach(m => {
+        ['\u524d\u534a','\u5f8c\u534a'].forEach(h => {
+          if (m.appearances[h][oldName] !== undefined) {
+            m.appearances[h][n] = m.appearances[h][oldName];
+            delete m.appearances[h][oldName];
+          }
+        });
+      });
+      saveState(); render();
+      showToast('\u270f\ufe0f \u540d\u524d\u3092\u5909\u66f4\u3057\u307e\u3057\u305f');
     }
     function removePlayer(name) {
       if (!confirm('\u300c' + name + '\u300d\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f\n\u5168\u8a66\u5408\u306e\u30c7\u30fc\u30bf\u3082\u524a\u9664\u3055\u308c\u307e\u3059\u3002')) return;
@@ -546,7 +569,8 @@
       }
       let playerHeaders = state.players.map(p => {
         const delBtn='<button class="player-delete" onclick="event.stopPropagation();removePlayer(\''+escHtml(p)+'\')">&times;</button>';
-        return '<th class="player-col">'+escHtml(p)+delBtn+'</th>';
+        const editBtn='<button class="player-edit" onclick="event.stopPropagation();editPlayer(\''+escHtml(p)+'\')">&#x270F;&#xFE0F;</button>';
+        return '<th class="player-col">'+escHtml(p)+editBtn+delBtn+'</th>';
       }).join('');
       const halves=['\u524d\u534a','\u5f8c\u534a'];
       let rows='';
