@@ -874,6 +874,119 @@
       overflow: hidden;
     }
 
+    /* ===== Spreadsheet Import ===== */
+    .sheet-import-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px dashed rgba(6, 182, 212, 0.4);
+      border-radius: var(--radius-sm);
+      color: var(--accent-cyan);
+      font-family: var(--font-main);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .sheet-import-btn:active {
+      background: rgba(6, 182, 212, 0.2);
+      transform: scale(0.98);
+    }
+
+    .sheet-player-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 12px 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+    }
+
+    .sheet-player-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .sheet-player-item:last-child { border-bottom: none; }
+    .sheet-player-item:active { background: rgba(99, 102, 241, 0.1); }
+
+    .sheet-player-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .sheet-player-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    .sheet-player-meta {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .sheet-already-added {
+      font-size: 0.65rem;
+      padding: 2px 7px;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent-green);
+      border-radius: 50px;
+      font-weight: 700;
+    }
+
+    .sheet-select-all-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 4px;
+      margin-bottom: 4px;
+    }
+
+    .sheet-select-all-row label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .sheet-loading {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .sheet-loading .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border-glass);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* ===== Responsive ===== */
     @media (min-width: 600px) {
       html { font-size: 15px; }
@@ -918,12 +1031,33 @@
       <div class="modal-handle"></div>
       <h2>👤 選手を追加</h2>
       <div class="form-group">
-        <label for="playerNameInput">選手名</label>
+        <label for="playerNameInput">選手名を入力</label>
         <input type="text" id="playerNameInput" placeholder="例: たろう" enterkeyhint="done">
       </div>
+      <button class="sheet-import-btn" onclick="openSheetImportModal()">
+        📋 スプレッドシートから一括読み込み
+      </button>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('playerModal')">キャンセル</button>
         <button class="btn btn-success" onclick="addPlayer()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spreadsheet Import Modal -->
+  <div class="modal-overlay" id="sheetImportModal">
+    <div class="modal" style="max-height:90dvh;overflow-y:auto;">
+      <div class="modal-handle"></div>
+      <h2>📋 スプレッドシートから読み込み</h2>
+      <div id="sheetImportBody">
+        <div class="sheet-loading">
+          <div class="spinner"></div>
+          <p>読み込み中...</p>
+        </div>
+      </div>
+      <div class="modal-actions" id="sheetImportActions" style="display:none;">
+        <button class="btn btn-ghost" onclick="closeModal('sheetImportModal')">キャンセル</button>
+        <button class="btn btn-success" onclick="importSelectedPlayers()">✅ 選択した選手を追加</button>
       </div>
     </div>
   </div>
@@ -1015,6 +1149,19 @@
       setTimeout(() => document.getElementById('playerNameInput').focus(), 300);
     }
 
+    function addPlayerOne(name) {
+      if (!name || state.players.includes(name)) return false;
+      state.players.push(name);
+      state.matches.forEach(match => {
+        ['前半', '後半'].forEach(half => {
+          if (!match.appearances[half][name]) {
+            match.appearances[half][name] = 'none';
+          }
+        });
+      });
+      return true;
+    }
+
     function addPlayer() {
       const input = document.getElementById('playerNameInput');
       const name = input.value.trim();
@@ -1023,23 +1170,122 @@
         showToast('⚠️ 同じ名前の選手がいます');
         return;
       }
-
-      state.players.push(name);
-
-      // Add this player to all existing matches
-      state.matches.forEach(match => {
-        ['前半', '後半'].forEach(half => {
-          if (!match.appearances[half][name]) {
-            match.appearances[half][name] = 'none';
-          }
-        });
-      });
-
+      addPlayerOne(name);
       input.value = '';
       closeModal('playerModal');
       saveState();
       render();
       showToast(`👤 ${name} を追加しました`);
+    }
+
+    // ===== Spreadsheet Import =====
+    const SHEET_ID = '12TIoUIqGUDNPwpfDOgzXli7Np27Rd9zAwI1rcVUGRIg';
+    const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+    // スプレッドシートのCSVをパースして選手名リストを抽出
+    function parseSheetCsv(csvText) {
+      const lines = csvText.split(/\r?\n/);
+      const players = [];
+      lines.forEach(line => {
+        // カンマ区切りで分割（簡易CSV: ダブルクォート内カンマ対応）
+        const cols = line.split(',');
+        // 4列目(index=3)が氏名。番号列(index=0)が数値のみの行を選手行とみなす
+        const numCol = cols[0] ? cols[0].trim() : '';
+        const nameCol = cols[3] ? cols[3].trim() : '';
+        if (/^\d+$/.test(numCol) && nameCol && nameCol.length > 0) {
+          players.push({ name: nameCol });
+        }
+      });
+      return players;
+    }
+
+    let sheetPlayers = []; // 読み込んだスプレッドシートの選手リスト
+
+    function openSheetImportModal() {
+      closeModal('playerModal');
+      document.getElementById('sheetImportModal').classList.add('active');
+      document.getElementById('sheetImportActions').style.display = 'none';
+      document.getElementById('sheetImportBody').innerHTML = `
+        <div class="sheet-loading">
+          <div class="spinner"></div>
+          <p>スプレッドシートを読み込み中...</p>
+        </div>`;
+
+      // fetchでCSVを取得（CORS対応のためno-corsでなくcors modeで試みる）
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(SHEET_CSV_URL)}`;
+
+      fetch(proxyUrl)
+        .then(res => {
+          if (!res.ok) throw new Error('fetch failed');
+          return res.text();
+        })
+        .then(csv => {
+          sheetPlayers = parseSheetCsv(csv);
+          if (sheetPlayers.length === 0) {
+            document.getElementById('sheetImportBody').innerHTML = `
+              <div class="sheet-loading">
+                <p style="color:var(--accent-red)">⚠️ 選手データを読み込めませんでした。<br>スプレッドシートが公開設定になっているか確認してください。</p>
+              </div>`;
+            return;
+          }
+          renderSheetPlayerList();
+          document.getElementById('sheetImportActions').style.display = 'flex';
+        })
+        .catch(err => {
+          document.getElementById('sheetImportBody').innerHTML = `
+            <div class="sheet-loading">
+              <p style="color:var(--accent-red)">⚠️ 読み込みに失敗しました。<br>インターネット接続を確認してください。</p>
+            </div>`;
+          console.warn('Sheet fetch error:', err);
+        });
+    }
+
+    function renderSheetPlayerList() {
+      const allNew = sheetPlayers.filter(p => !state.players.includes(p.name));
+      const html = `
+        <div class="sheet-select-all-row">
+          <label>
+            <input type="checkbox" id="selectAllSheet" onchange="toggleSelectAll(this.checked)">
+            すべて選択（未追加のみ）
+          </label>
+          <span style="font-size:0.72rem;color:var(--text-muted);">${sheetPlayers.length}名</span>
+        </div>
+        <div class="sheet-player-list">
+          ${sheetPlayers.map((p, i) => {
+            const alreadyAdded = state.players.includes(p.name);
+            return `
+              <label class="sheet-player-item" for="sp-${i}">
+                <input type="checkbox" id="sp-${i}" value="${escHtml(p.name)}"
+                  ${alreadyAdded ? 'disabled' : ''}>
+                <span class="sheet-player-name">${escHtml(p.name)}</span>
+                ${alreadyAdded ? '<span class="sheet-already-added">追加済</span>' : ''}
+              </label>`;
+          }).join('')}
+        </div>`;
+      document.getElementById('sheetImportBody').innerHTML = html;
+    }
+
+    function toggleSelectAll(checked) {
+      document.querySelectorAll('#sheetImportBody input[type="checkbox"]:not(:disabled)').forEach(cb => {
+        if (cb.id !== 'selectAllSheet') cb.checked = checked;
+      });
+    }
+
+    function importSelectedPlayers() {
+      const checked = document.querySelectorAll('#sheetImportBody input[type="checkbox"]:not(:disabled):checked');
+      let added = 0;
+      checked.forEach(cb => {
+        if (cb.id === 'selectAllSheet') return;
+        if (addPlayerOne(cb.value)) added++;
+      });
+      if (added > 0) {
+        saveState();
+        render();
+        closeModal('sheetImportModal');
+        showToast(`👤 ${added}名を追加しました`);
+      } else {
+        showToast('⚠️ 選手を選択してください');
+      }
     }
 
     function removePlayer(name) {
