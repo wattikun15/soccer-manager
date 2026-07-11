@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="8人制サッカー 1Dayトーナメント 出場時間・フォーメーション管理アプリ">
+  <title>⚽ 出場管理 - 8人制サッカー</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== CSS Reset & Variables ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --bg-glass: rgba(30, 41, 59, 0.6);
+      --bg-input: rgba(30, 41, 59, 0.8);
+      --border-glass: rgba(99, 130, 255, 0.15);
+      --border-subtle: rgba(148, 163, 184, 0.12);
+
+      --accent-primary: #6366f1;
+      --accent-secondary: #818cf8;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --accent-green: #22c55e;
+      --accent-green-glow: rgba(34, 197, 94, 0.25);
+      --accent-amber: #f59e0b;
+      --accent-amber-glow: rgba(245, 158, 11, 0.25);
+      --accent-red: #ef4444;
+      --accent-red-glow: rgba(239, 68, 68, 0.2);
+      --accent-cyan: #06b6d4;
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-accent: #a5b4fc;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+      --shadow-glow: 0 0 20px var(--accent-glow);
+
+      --font-main: 'Inter', 'Noto Sans JP', -apple-system, sans-serif;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      font-size: 14px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== Background Effect ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 14, 26, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-glass);
+      padding: 12px 16px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #818cf8, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-main);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+      color: white;
+      box-shadow: 0 2px 10px var(--accent-glow);
+    }
+    .btn-primary:active {
+      transform: scale(0.95);
+      box-shadow: 0 1px 5px var(--accent-glow);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--accent-green), #16a34a);
+      color: white;
+      box-shadow: 0 2px 10px var(--accent-green-glow);
+    }
+    .btn-success:active {
+      transform: scale(0.95);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--accent-red);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .btn-danger:active {
+      background: rgba(239, 68, 68, 0.3);
+      transform: scale(0.95);
+    }
+
+    .btn-ghost {
+      background: var(--bg-glass);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+    .btn-ghost:active {
+      background: rgba(30, 41, 59, 0.9);
+      transform: scale(0.95);
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.75rem;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    /* ===== Summary Bar ===== */
+    .summary-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 2px 0;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .summary-bar::-webkit-scrollbar { display: none; }
+
+    .summary-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .summary-chip .count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 50px;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .summary-chip .count.high {
+      background: var(--accent-green);
+    }
+    .summary-chip .count.low {
+      background: var(--accent-amber);
+    }
+
+    /* ===== Main Content ===== */
+    .main {
+      position: relative;
+      z-index: 1;
+      padding: 16px;
+      padding-bottom: 100px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* ===== Section Title ===== */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border-subtle), transparent);
+    }
+
+    /* ===== Match Card ===== */
+    .match-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-md);
+      animation: fadeSlideIn 0.3s ease-out;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .match-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    .match-info {
+      flex: 1;
+    }
+
+    .match-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+
+    .match-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .match-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .match-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ===== Table ===== */
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .table-wrapper::-webkit-scrollbar { display: none; }
+
+    .match-table {
+      width: 100%;
+      min-width: max-content;
+      border-collapse: collapse;
+    }
+
+    .match-table th,
+    .match-table td {
+      text-align: center;
+      padding: 0;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .match-table th {
+      padding: 8px 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(30, 41, 59, 0.5);
+      white-space: nowrap;
+      position: relative;
+    }
+
+    .match-table th.player-col {
+      min-width: 52px;
+      max-width: 64px;
+    }
+
+    .match-table th .player-delete {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 14px;
+      height: 14px;
+      font-size: 8px;
+      line-height: 14px;
+      background: rgba(239, 68, 68, 0.5);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .edit-mode .match-table th .player-delete {
+      display: flex;
+    }
+
+    .match-table td.half-label {
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-accent);
+      background: rgba(99, 102, 241, 0.07);
+      white-space: nowrap;
+      min-width: 50px;
+      text-align: left;
+    }
+
+    .match-table td.half-label.second-half {
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.07);
+    }
+
+    /* ===== Cell Tap Interaction ===== */
+    .cell {
+      width: 52px;
+      height: 44px;
+      cursor: pointer;
+      position: relative;
+      transition: background var(--transition);
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .cell:active {
+      background: rgba(99, 102, 241, 0.15);
+    }
+
+    .cell .cell-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: 1rem;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+
+    .cell[data-status="play"] {
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .cell[data-status="play"] .cell-content {
+      color: var(--accent-green);
+      font-size: 1.2rem;
+    }
+
+    .cell[data-status="gk"] {
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .cell[data-status="gk"] .cell-content {
+      color: var(--accent-amber);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .cell-pop {
+      animation: cellPop 0.2s ease;
+    }
+
+    @keyframes cellPop {
+      0% { transform: scale(0.7); opacity: 0.5; }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ===== Count Row ===== */
+    .match-table tr.count-row td {
+      padding: 6px 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: rgba(30, 41, 59, 0.3);
+      border-top: 2px solid var(--border-glass);
+    }
+
+    .match-table tr.count-row td.count-label {
+      text-align: left;
+      padding-left: 10px;
+      color: var(--text-secondary);
+    }
+
+    /* ===== Total Summary ===== */
+    .total-section {
+      margin-top: 24px;
+    }
+
+    .total-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .total-card .total-header {
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(6, 182, 212, 0.05));
+      border-bottom: 1px solid var(--border-glass);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .total-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1px;
+      background: var(--border-subtle);
+    }
+
+    .total-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-secondary);
+    }
+
+    .total-item .player-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .total-item .total-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .total-item .total-count.top { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
+    .total-item .total-count.mid { background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); }
+    .total-item .total-count.low { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+    .total-item .total-count.zero { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
+
+    /* ===== Modal ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-width: 500px;
+      padding: 24px 20px;
+      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--text-muted);
+      border-radius: 2px;
+      margin: 0 auto 18px;
+    }
+
+    .modal h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 0.9rem;
+      transition: border-color var(--transition);
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .form-group input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    /* ===== FAB ===== */
+    .fab-container {
+      position: fixed;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      right: 20px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .fab {
+      width: 52px;
+      height: 52px;
+      border: none;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+    }
+
+    .fab:active {
+      transform: scale(0.9);
+    }
+
+    .fab-match {
+      background: linear-gradient(135deg, var(--accent-primary), #4f46e5);
+      color: white;
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+
+    /* ===== Edit Mode Toggle ===== */
+    .edit-toggle {
+      position: relative;
+    }
+
+    .edit-toggle.active {
+      background: rgba(239, 68, 68, 0.15) !important;
+      color: var(--accent-red) !important;
+      border-color: rgba(239, 68, 68, 0.3) !important;
+    }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-glass);
+      color: var(--text-primary);
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 300;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== Scrollbar ===== */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+    /* ===== Match Edit Inline ===== */
+    .match-edit-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(30, 41, 59, 0.3);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .match-edit-row input {
+      flex: 1;
+      padding: 6px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      font-size: 0.78rem;
+      outline: none;
+    }
+    .match-edit-row input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    /* ===== Data Action ===== */
+    .data-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 24px;
+      padding-bottom: 20px;
+    }
+
+    /* ===== Responsive ===== */
+    @media (min-width: 600px) {
+      html { font-size: 15px; }
+      .main { padding: 24px; padding-bottom: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="header-top">
+      <h1 class="app-title">⚽ 出場管理</h1>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">
+          ✏️ 編集
+        </button>
+        <button class="btn btn-success btn-sm" onclick="openPlayerModal()">
+          👤+
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openMatchModal()">
+          🏟️+
+        </button>
+      </div>
+    </div>
+    <div class="summary-bar" id="summaryBar"></div>
+  </header>
+
+  <!-- Main -->
+  <main class="main" id="mainContent">
+    <!-- Matches rendered here -->
+  </main>
+
+  <!-- FAB -->
+  <div class="fab-container">
+    <button class="fab fab-match" onclick="openMatchModal()" title="試合を追加">＋</button>
+  </div>
+
+  <!-- Add Player Modal -->
+  <div class="modal-overlay" id="playerModal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2>👤 選手を追加</h2>
+      <div class="form-group">
+        <label for="playerNameInput">選手名</label>
+        <input type="text" id="playerNameInput" placeholder="例: たろう" enterkeyhint="done">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('playerModal')">キャンセル</button>
+        <button class="btn btn-success" onclick="addPlayer()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Match Modal -->
+  <div class="modal-overlay" id="matchModal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2>🏟️ 試合を追加</h2>
+      <div class="form-group">
+        <label for="matchNameInput">試合名</label>
+        <input type="text" id="matchNameInput" placeholder="例: 予選①" enterkeyhint="next">
+      </div>
+      <div class="form-group">
+        <label for="matchOpponentInput">対戦相手</label>
+        <input type="text" id="matchOpponentInput" placeholder="例: ○○FC" enterkeyhint="next">
+      </div>
+      <div class="form-group">
+        <label for="matchTimeInput">試合時間</label>
+        <input type="text" id="matchTimeInput" placeholder="例: 13:15" enterkeyhint="done">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('matchModal')">キャンセル</button>
+        <button class="btn btn-primary" onclick="addMatch()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ===== State =====
+    const STORAGE_KEY = 'soccer8_tournament_v2';
+
+    let state = {
+      players: [],
+      matches: [],
+      // matches[i].appearances = { "前半": { playerName: "none"|"play"|"gk" }, "後半": { ... } }
+      editMode: false
+    };
+
+    // ===== Persistence =====
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          players: state.players,
+          matches: state.matches
+        }));
+      } catch(e) {
+        console.warn('保存に失敗しました', e);
+      }
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state.players = parsed.players || [];
+          state.matches = parsed.matches || [];
+        }
+      } catch(e) {
+        console.warn('読み込みに失敗しました', e);
+      }
+    }
+
+    // ===== Helpers =====
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // ===== Player Management =====
+    function openPlayerModal() {
+      document.getElementById('playerModal').classList.add('active');
+      setTimeout(() => document.getElementById('playerNameInput').focus(), 300);
+    }
+
+    function addPlayer() {
+      const input = document.getElementById('playerNameInput');
+      const name = input.value.trim();
+      if (!name) return;
+      if (state.players.includes(name)) {
+        showToast('⚠️ 同じ名前の選手がいます');
+        return;
+      }
+
+      state.players.push(name);
+
+      // Add this player to all existing matches
+      state.matches.forEach(match => {
+        ['前半', '後半'].forEach(half => {
+          if (!match.appearances[half][name]) {
+            match.appearances[half][name] = 'none';
+          }
+        });
+      });
+
+      input.value = '';
+      closeModal('playerModal');
+      saveState();
+      render();
+      showToast(`👤 ${name} を追加しました`);
+    }
+
+    function removePlayer(name) {
+      if (!confirm(`「${name}」を削除しますか？\n全試合のデータも削除されます。`)) return;
+
+      state.players = state.players.filter(p => p !== name);
+      state.matches.forEach(match => {
+        ['前半', '後半'].forEach(half => {
+          delete match.appearances[half][name];
+        });
+      });
+
+      saveState();
+      render();
+      showToast(`🗑️ ${name} を削除しました`);
+    }
+
+    // ===== Match Management =====
+    function openMatchModal() {
+      document.getElementById('matchModal').classList.add('active');
+      setTimeout(() => document.getElementById('matchNameInput').focus(), 300);
+    }
+
+    function addMatch() {
+      const nameInput = document.getElementById('matchNameInput');
+      const opponentInput = document.getElementById('matchOpponentInput');
+      const timeInput = document.getElementById('matchTimeInput');
+
+      const name = nameInput.value.trim();
+      if (!name) {
+        showToast('⚠️ 試合名を入力してください');
+        return;
+      }
+
+      const appearances = { '前半': {}, '後半': {} };
+      state.players.forEach(player => {
+        appearances['前半'][player] = 'none';
+        appearances['後半'][player] = 'none';
+      });
+
+      state.matches.push({
+        id: generateId(),
+        name: name,
+        opponent: opponentInput.value.trim(),
+        time: timeInput.value.trim(),
+        appearances: appearances
+      });
+
+      nameInput.value = '';
+      opponentInput.value = '';
+      timeInput.value = '';
+      closeModal('matchModal');
+      saveState();
+      render();
+      showToast(`🏟️ ${name} を追加しました`);
+    }
+
+    function removeMatch(matchId) {
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return;
+      if (!confirm(`「${match.name}」を削除しますか？`)) return;
+
+      state.matches = state.matches.filter(m => m.id !== matchId);
+      saveState();
+      render();
+      showToast(`🗑️ ${match.name} を削除しました`);
+    }
+
+    function updateMatchField(matchId, field, value) {
+      const match = state.matches.find(m => m.id === matchId);
+      if (match) {
+        match[field] = value;
+        saveState();
+        renderSummaryBar();
+      }
+    }
+
+    // ===== Appearance Management =====
+    function cycleStatus(matchId, half, playerName) {
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return;
+
+      const current = match.appearances[half][playerName] || 'none';
+      const cycle = { 'none': 'play', 'play': 'gk', 'gk': 'none' };
+      match.appearances[half][playerName] = cycle[current];
+
+      saveState();
+      render();
+    }
+
+    function getStatusDisplay(status) {
+      if (status === 'play') return '○';
+      if (status === 'gk') return 'GK';
+      return '';
+    }
+
+    // ===== Counting =====
+    function countPlayerTotal(playerName) {
+      let count = 0;
+      state.matches.forEach(match => {
+        ['前半', '後半'].forEach(half => {
+          const s = match.appearances[half][playerName];
+          if (s === 'play' || s === 'gk') count++;
+        });
+      });
+      return count;
+    }
+
+    function countPlayerInMatch(matchId, playerName) {
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return 0;
+      let count = 0;
+      ['前半', '後半'].forEach(half => {
+        const s = match.appearances[half][playerName];
+        if (s === 'play' || s === 'gk') count++;
+      });
+      return count;
+    }
+
+    // ===== Edit Mode =====
+    function toggleEditMode() {
+      state.editMode = !state.editMode;
+      document.getElementById('editToggle').classList.toggle('active', state.editMode);
+      document.getElementById('editToggle').textContent = state.editMode ? '✏️ 完了' : '✏️ 編集';
+      render();
+    }
+
+    // ===== Modal =====
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal(overlay.id);
+      });
+    });
+
+    // Enter key support for modals
+    document.getElementById('playerNameInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addPlayer();
+    });
+    document.getElementById('matchTimeInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addMatch();
+    });
+
+    // ===== Rendering =====
+    function renderSummaryBar() {
+      const bar = document.getElementById('summaryBar');
+      if (state.players.length === 0) {
+        bar.innerHTML = '<span style="font-size:0.72rem;color:var(--text-muted);">👤 選手を追加してください</span>';
+        return;
+      }
+
+      const maxPossible = state.matches.length * 2;
+
+      bar.innerHTML = state.players.map(player => {
+        const count = countPlayerTotal(player);
+        let countClass = '';
+        if (maxPossible > 0) {
+          const ratio = count / maxPossible;
+          if (ratio >= 0.6) countClass = 'high';
+          else if (ratio < 0.3) countClass = 'low';
+        }
+        return `<div class="summary-chip">
+          <span>${player}</span>
+          <span class="count ${countClass}">${count}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function renderMatches() {
+      const main = document.getElementById('mainContent');
+
+      if (state.matches.length === 0 && state.players.length === 0) {
+        main.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⚽</div>
+            <p>まず選手と試合を追加してスタート！</p>
+            <button class="btn btn-success" onclick="openPlayerModal()">👤 選手を追加</button>
+          </div>`;
+        return;
+      }
+
+      if (state.matches.length === 0) {
+        main.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🏟️</div>
+            <p>試合を追加してください</p>
+            <button class="btn btn-primary" onclick="openMatchModal()">🏟️ 試合を追加</button>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+
+      // Match Cards
+      state.matches.forEach(match => {
+        html += renderMatchCard(match);
+      });
+
+      // Total Summary
+      if (state.players.length > 0) {
+        html += renderTotalSummary();
+      }
+
+      // Data actions
+      html += `
+        <div class="data-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportData()">📤 エクスポート</button>
+          <button class="btn btn-ghost btn-sm" onclick="importData()">📥 インポート</button>
+          <button class="btn btn-danger btn-sm" onclick="resetAll()">🗑️ 全削除</button>
+        </div>`;
+
+      main.innerHTML = html;
+    }
+
+    function renderMatchCard(match) {
+      const editClass = state.editMode ? 'edit-mode' : '';
+
+      let editRow = '';
+      if (state.editMode) {
+        editRow = `
+          <div class="match-edit-row">
+            <input type="text" value="${escHtml(match.name)}" placeholder="試合名"
+              onchange="updateMatchField('${match.id}', 'name', this.value)" style="flex:1.2">
+            <input type="text" value="${escHtml(match.opponent)}" placeholder="対戦相手"
+              onchange="updateMatchField('${match.id}', 'opponent', this.value)" style="flex:1">
+            <input type="text" value="${escHtml(match.time)}" placeholder="時間"
+              onchange="updateMatchField('${match.id}', 'time', this.value)" style="flex:0.6">
+          </div>`;
+      }
+
+      // Build table
+      let playerHeaders = state.players.map(p => {
+        const delBtn = `<button class="player-delete" onclick="event.stopPropagation(); removePlayer('${escHtml(p)}')">×</button>`;
+        return `<th class="player-col">${escHtml(p)}${delBtn}</th>`;
+      }).join('');
+
+      const halves = ['前半', '後半'];
+      let rows = '';
+
+      halves.forEach((half, idx) => {
+        const halfClass = idx === 1 ? 'second-half' : '';
+        let cells = state.players.map(player => {
+          const status = match.appearances[half][player] || 'none';
+          const display = getStatusDisplay(status);
+          return `<td class="cell" data-status="${status}"
+                    onclick="cycleStatus('${match.id}', '${half}', '${escHtml(player)}')">
+                    <div class="cell-content">${display}</div>
+                  </td>`;
+        }).join('');
+        rows += `<tr><td class="half-label ${halfClass}">${half}</td>${cells}</tr>`;
+      });
+
+      // Per-match count row
+      let countCells = state.players.map(player => {
+        const c = countPlayerInMatch(match.id, player);
+        return `<td>${c > 0 ? c : '-'}</td>`;
+      }).join('');
+      rows += `<tr class="count-row"><td class="count-label">出場</td>${countCells}</tr>`;
+
+      const metaTime = match.time ? `<span>🕐 ${escHtml(match.time)}</span>` : '';
+      const metaOpponent = match.opponent ? `<span>VS ${escHtml(match.opponent)}</span>` : '';
+
+      return `
+        <div class="match-card ${editClass}" id="match-${match.id}">
+          <div class="match-header">
+            <div class="match-info">
+              <div class="match-name">${escHtml(match.name)}</div>
+              <div class="match-meta">${metaTime}${metaOpponent}</div>
+            </div>
+            <div class="match-actions">
+              ${state.editMode ? `<button class="btn btn-danger btn-sm" onclick="removeMatch('${match.id}')">削除</button>` : ''}
+            </div>
+          </div>
+          ${editRow}
+          <div class="table-wrapper">
+            <table class="match-table">
+              <thead>
+                <tr>
+                  <th style="min-width:50px;"></th>
+                  ${playerHeaders}
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    function renderTotalSummary() {
+      const maxPossible = state.matches.length * 2;
+      const items = state.players.map(player => {
+        const count = countPlayerTotal(player);
+        let cls = 'zero';
+        if (maxPossible > 0) {
+          const ratio = count / maxPossible;
+          if (ratio >= 0.7) cls = 'top';
+          else if (ratio >= 0.4) cls = 'mid';
+          else if (ratio > 0) cls = 'low';
+        }
+        return `<div class="total-item">
+          <span class="player-name">${escHtml(player)}</span>
+          <span class="total-count ${cls}">${count}</span>
+        </div>`;
+      }).join('');
+
+      return `
+        <div class="total-section">
+          <div class="section-title">📊 出場回数サマリー</div>
+          <div class="total-card">
+            <div class="total-header">全${state.matches.length}試合 合計出場回数</div>
+            <div class="total-grid">${items}</div>
+          </div>
+        </div>`;
+    }
+
+    function render() {
+      renderSummaryBar();
+      renderMatches();
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    // ===== Data Export / Import =====
+    function exportData() {
+      const data = JSON.stringify({ players: state.players, matches: state.matches }, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `soccer_tournament_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('📤 データをエクスポートしました');
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (data.players && data.matches) {
+              state.players = data.players;
+              state.matches = data.matches;
+              saveState();
+              render();
+              showToast('📥 データをインポートしました');
+            } else {
+              showToast('⚠️ 無効なデータ形式です');
+            }
+          } catch(err) {
+            showToast('⚠️ ファイルの読み込みに失敗しました');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    function resetAll() {
+      if (!confirm('全てのデータを削除しますか？\nこの操作は取り消せません。')) return;
+      state.players = [];
+      state.matches = [];
+      state.editMode = false;
+      document.getElementById('editToggle').classList.remove('active');
+      document.getElementById('editToggle').textContent = '✏️ 編集';
+      saveState();
+      render();
+      showToast('🗑️ 全データを削除しました');
+    }
+
+    // ===== Init =====
+    loadState();
+    render();
+  </script>
+</body>
+</html>
