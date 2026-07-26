@@ -182,6 +182,15 @@
     ::-webkit-scrollbar-track { background:transparent; }
     ::-webkit-scrollbar-thumb { background:var(--text-muted); border-radius:2px; }
 
+    /* Player Edit Mode Overlay */
+    body.player-edit-active #header,
+    body.player-edit-active .match-card,
+    body.player-edit-active .fab-container {
+      pointer-events: none;
+      opacity: 0.4;
+      filter: grayscale(80%);
+    }
+
     @media (min-width:600px) { html { font-size:15px; } .main { padding:24px; padding-bottom:100px; } }
   </style>
 </head>
@@ -719,8 +728,13 @@
       btn.innerHTML = state.editMode ? '&#x270F;&#xFE0F; 完 了' : '&#x270F;&#xFE0F; 試合編集';
       render();
     }
-    function togglePlayerEditMode() {
+    function togglePlayerEditMode(cancel = false) {
       state.playerEditMode = !state.playerEditMode;
+      if (state.playerEditMode) {
+        document.body.classList.add('player-edit-active');
+      } else {
+        document.body.classList.remove('player-edit-active');
+      }
       render();
     }
 
@@ -747,12 +761,17 @@
       state.matches.forEach(m => { html += renderMatchCard(m); });
       if (state.players.length>0) html += renderTotalSummary();
       
-      let playerEditLabel = state.playerEditMode ? '&#x270F;&#xFE0F; 完了' : '&#x270F;&#xFE0F; 選手編集';
-      let actionBtns = '<button class="btn btn-success" style="padding:10px 20px; font-size:1rem;" onclick="openPlayerModal()">&#xFF0B; 選手</button>';
-      if (state.players.length > 0) {
-        actionBtns += '<button class="btn btn-ghost" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode()">'+playerEditLabel+'</button>';
+      let actionBtns = '';
+      if (!state.playerEditMode) {
+        actionBtns += '<button class="btn btn-success" style="padding:10px 20px; font-size:1rem;" onclick="openPlayerModal()">&#xFF0B; 選手</button>';
+        if (state.players.length > 0) {
+          actionBtns += '<button class="btn btn-ghost" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode()">&#x270F;&#xFE0F; 選手編集</button>';
+        }
+      } else {
+        actionBtns += '<button class="btn btn-ghost" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode(true)">&#x2716;&#xFE0F; キャンセル</button>';
+        actionBtns += '<button class="btn btn-primary" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode()">&#x2714;&#xFE0F; 完了</button>';
       }
-      html += '<div class="data-actions" style="justify-content:center; gap:16px; margin-top:20px;">' + actionBtns + '</div>';
+      html += '<div class="data-actions" style="justify-content:center; gap:16px; margin-top:20px; position:relative; z-index:110;">' + actionBtns + '</div>';
       main.innerHTML = html;
     }
 
@@ -818,13 +837,15 @@
         let actions = '';
         if (state.playerEditMode) {
           actions = '<button class="btn btn-ghost btn-sm" style="padding:2px 8px; color:var(--accent-cyan); font-size:0.8rem;" onclick="editPlayer(\''+escHtml(player)+'\')">&#x270F;&#xFE0F;</button>'
-                  + '<button class="btn btn-ghost btn-sm" style="padding:2px 8px; color:var(--accent-red); font-size:1rem;" onclick="removePlayer(\''+escHtml(player)+'\')">&times;</button>';
+                  + '<button class="btn btn-ghost btn-sm" style="padding:2px 8px; color:var(--accent-red); font-size:1rem;" onclick="removePlayer(\''+escHtml(player)+'\')">&#x1F5D1;&#xFE0F;</button>';
         }
         
+        const countDisplay = state.playerEditMode ? '' : '<div style="margin-left:auto;">'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div>';
+
         return '<div class="total-item" style="display:flex; align-items:center; gap:8px;">'
              + actions
              + '<span class="player-name">'+escHtml(player)+'</span>'
-             + '<div style="margin-left:auto;">'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div>'
+             + countDisplay
              + '</div>';
       }).join('');
       return '<div class="total-section"><div class="section-title">&#x1F4CA; \u51fa\u5834\u56de\u6570\u30b5\u30de\u30ea\u30fc</div>'
