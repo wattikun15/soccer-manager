@@ -188,13 +188,12 @@
 <body>
 
   <header class="header" id="header">
-    <div class="header-top">
+    <div class="header-top" style="margin-bottom:0;">
       <h1 class="app-title">&#x26BD; 出場管理</h1>
       <div class="header-actions">
-        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 編集</button>
+        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 試合の編集</button>
       </div>
     </div>
-    <div class="summary-bar" id="summaryBar"></div>
   </header>
 
   <main class="main" id="mainContent"></main>
@@ -717,7 +716,11 @@
       state.editMode = !state.editMode;
       const btn = document.getElementById('editToggle');
       btn.classList.toggle('active', state.editMode);
-      btn.innerHTML = state.editMode ? '&#x270F;&#xFE0F; \u5b8c\u4e86' : '&#x270F;&#xFE0F; \u7de8\u96c6';
+      btn.innerHTML = state.editMode ? '&#x270F;&#xFE0F; 完 了' : '&#x270F;&#xFE0F; 試合の編集';
+      render();
+    }
+    function togglePlayerEditMode() {
+      state.playerEditMode = !state.playerEditMode;
       render();
     }
 
@@ -731,36 +734,25 @@
 
     // ===== Rendering =====
     function renderSummaryBar() {
-      const bar = document.getElementById('summaryBar');
-      const max = state.matches.length * 2;
-      let html = '<button class="summary-chip" onclick="openPlayerModal()" style="background:var(--accent-green); color:white; border:none; padding:4px 10px; cursor:pointer;">&#xFF0B; 選手</button>';
-      html += state.players.map(player => {
-        const counts = countPlayerTotal(player);
-        const count = counts.total;
-        let cls='';
-        if (max>0) { const r=count/max; if(r>=0.6) cls='high'; else if(r<0.3) cls='low'; }
-        if (counts.fp > 0 && counts.gk > 0) cls = 'both';
-        const details = counts.gk > 0 ? (counts.fp > 0 ? `FP${counts.fp}:GK${counts.gk}` : `GK${counts.gk}`) : counts.fp;
-        let actions = '';
-        if (state.editMode) {
-          actions = '<button class="player-edit-btn" onclick="editPlayer(\''+escHtml(player)+'\')">&#x270F;&#xFE0F;</button>'
-                  + '<button class="player-del-btn" onclick="removePlayer(\''+escHtml(player)+'\')">&times;</button>';
-        }
-        return '<div class="summary-chip">' + actions + '<span>'+escHtml(player)+'</span><span class="count '+cls+'" style="width:auto;min-width:20px;padding:0 6px;border-radius:10px;">'+details+'</span></div>';
-      }).join('');
-      bar.innerHTML = html;
+      // Removed top summary bar per user request
     }
 
     function renderMatches() {
       const main = document.getElementById('mainContent');
-      if (state.matches.length===0) {
-        main.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F3DF;&#xFE0F;</div><p>\u8a66\u5408\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</p><button class="btn btn-primary" onclick="openMatchModal()">\uD83C\uDFDF\uFE0F \u8a66\u5408\u3092\u8ffd\u52a0</button></div>';
+      if (state.matches.length===0 && state.players.length===0) {
+        main.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F3DF;&#xFE0F;</div><p>\u8a66\u5408\u3092\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044</p><button class="btn btn-primary" onclick="openMatchModal()">\uD83C\uDFDF\uFE0F \u8a66\u5408\u3092\u8ffd\u52a0</button><br><br><button class="btn btn-success" onclick="openPlayerModal()">&#xFF0B; 選手を追加</button></div>';
         return;
       }
       let html='';
       state.matches.forEach(m => { html += renderMatchCard(m); });
       if (state.players.length>0) html += renderTotalSummary();
-      html += '<div class="data-actions"><button class="btn btn-danger btn-sm" onclick="resetAll()">\uD83D\uDDD1\uFE0F \u5168\u524a\u9664</button></div>';
+      
+      let playerEditLabel = state.playerEditMode ? '&#x270F;&#xFE0F; 完了' : '&#x270F;&#xFE0F; 人の修正';
+      let actionBtns = '<button class="btn btn-success" style="padding:10px 20px; font-size:1rem;" onclick="openPlayerModal()">&#xFF0B; 選手</button>';
+      if (state.players.length > 0) {
+        actionBtns += '<button class="btn btn-ghost" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode()">'+playerEditLabel+'</button>';
+      }
+      html += '<div class="data-actions" style="justify-content:center; gap:16px; margin-top:20px;">' + actionBtns + '</div>';
       main.innerHTML = html;
     }
 
@@ -775,9 +767,7 @@
           +'</div>';
       }
       let playerHeaders = state.players.map(p => {
-        const delBtn='<button class="player-delete" onclick="event.stopPropagation();removePlayer(\''+escHtml(p)+'\')">&times;</button>';
-        const editBtn='<button class="player-edit" onclick="event.stopPropagation();editPlayer(\''+escHtml(p)+'\')">&#x270F;&#xFE0F;</button>';
-        return '<th class="player-col">'+escHtml(p)+editBtn+delBtn+'</th>';
+        return '<th class="player-col">'+escHtml(p)+'</th>';
       }).join('');
       const halves=['\u524d\u534a','\u5f8c\u534a'];
       let rows='';
@@ -824,7 +814,18 @@
         let cls='zero';
         if (max>0) { const r=count/max; if(r>=0.7) cls='top'; else if(r>=0.4) cls='mid'; else if(r>0) cls='low'; }
         const gkHtml = counts.gk > 0 ? `<span style="font-size:0.65rem;color:var(--text-muted);margin-right:6px;">FP:${counts.fp} GK:${counts.gk}</span>` : '';
-        return '<div class="total-item"><span class="player-name">'+escHtml(player)+'</span><div>'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div></div>';
+        
+        let actions = '';
+        if (state.playerEditMode) {
+          actions = '<button class="btn btn-ghost btn-sm" style="padding:2px 8px; color:var(--accent-cyan); font-size:0.8rem;" onclick="editPlayer(\''+escHtml(player)+'\')">&#x270F;&#xFE0F;</button>'
+                  + '<button class="btn btn-ghost btn-sm" style="padding:2px 8px; color:var(--accent-red); font-size:1rem;" onclick="removePlayer(\''+escHtml(player)+'\')">&times;</button>';
+        }
+        
+        return '<div class="total-item" style="display:flex; align-items:center; gap:8px;">'
+             + actions
+             + '<span class="player-name">'+escHtml(player)+'</span>'
+             + '<div style="margin-left:auto;">'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div>'
+             + '</div>';
       }).join('');
       return '<div class="total-section"><div class="section-title">&#x1F4CA; \u51fa\u5834\u56de\u6570\u30b5\u30de\u30ea\u30fc</div>'
         +'<div class="total-card"><div class="total-header">\u5168'+state.matches.length+'\u8a66\u5408 \u5408\u8a08\u51fa\u5834\u56de\u6570</div>'
