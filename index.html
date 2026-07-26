@@ -598,7 +598,7 @@
           const color = assigned === req ? 'var(--accent-green)' : (assigned > req ? 'var(--accent-red)' : 'var(--text-muted)');
           return h + ': <span style="color:'+color+'; font-weight:700;">' + assigned + '/' + req + '人</span> <span style="font-size:0.75rem; color:var(--text-muted); margin-left:2px;">(休:' + restingCount + ')</span>';
         });
-        countText = '<span style="font-size:0.7rem; color:var(--text-muted); margin-left:8px; font-weight:normal;">' + counts.join(' / ') + '</span>';
+        countText = '<div style="font-size:0.7rem; color:var(--text-muted); margin-left:8px; font-weight:normal; line-height:1.3;">' + counts.join('<br>') + '</div>';
       }
 
       const titleHtml = '<div class="formation-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:'+(isCollapsed?'0':'12px')+';'+disableOthers+'" onclick="toggleFormation(\''+match.id+'\')">'
@@ -764,11 +764,12 @@
       if (status==='gk') return 'GK';
       if (status==='rest') return '<span style="color:var(--text-muted); font-weight:bold;">休</span>';
       if (status==='none') return '<span class="none-dash">-</span>';
-      if (status.startsWith('DF') || status.startsWith('MF') || status.startsWith('FW')) {
+      const up = status.toUpperCase();
+      if (up.startsWith('DF') || up.startsWith('MF') || up.startsWith('FW')) {
          let color = '#60a5fa';
-         if (status.startsWith('MF')) color = '#34d399';
-         if (status.startsWith('FW')) color = '#f87171';
-         return `<span style="color:${color}; font-size:0.8rem; letter-spacing:-0.5px;">${status}</span>`;
+         if (up.startsWith('MF')) color = '#34d399';
+         if (up.startsWith('FW')) color = '#f87171';
+         return `<span style="color:${color}; font-size:0.8rem; letter-spacing:-0.5px;">${status.toUpperCase()}</span>`;
       }
       return '';
     }
@@ -835,7 +836,8 @@
         ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
           const s=m.appearances[h][playerName]; 
           if (s) {
-            if (s==='play' || (s>='1' && s<='7') || s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW')) fp++; 
+            const up = s.toUpperCase();
+            if (s==='play' || (s>='1' && s<='7') || up.startsWith('DF') || up.startsWith('MF') || up.startsWith('FW')) fp++; 
             else if(s==='gk') gk++;
             else if(s==='rest') rest++;
           }
@@ -850,7 +852,8 @@
       ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
         const s=match.appearances[h][playerName]; 
         if (s) {
-          if (s==='play' || (s>='1' && s<='7') || s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW')) fp++; 
+          const up = s.toUpperCase();
+          if (s==='play' || (s>='1' && s<='7') || up.startsWith('DF') || up.startsWith('MF') || up.startsWith('FW')) fp++; 
           else if(s==='gk') gk++;
         }
       });
