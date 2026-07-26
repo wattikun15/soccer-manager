@@ -194,6 +194,13 @@
       filter: grayscale(80%);
     }
 
+    body.drag-mode-active .header-actions button,
+    body.drag-mode-active .data-actions,
+    body.drag-mode-active .total-section {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
     @media (min-width:600px) { html { font-size:15px; } .main { padding:24px; padding-bottom:100px; } }
   </style>
 </head>
@@ -526,13 +533,8 @@
             }
           }
           let label = assignedPlayer ? shortName(assignedPlayer) : (prefix === 'GK' ? 'GK' : posStr);
-          let isSelectedForSwap = false;
-          if (typeof window.isPositionSwapMode !== 'undefined' && window.isPositionSwapMode && window.swapSourcePos) {
-            isSelectedForSwap = window.swapSourcePos.matchId === match.id && window.swapSourcePos.half === half && window.swapSourcePos.posStr === posStr;
-          }
-          let stroke = isSelectedForSwap ? ' stroke="#fbbf24" stroke-width="3"' : ' stroke="white" stroke-width="1.5"';
-          out+='<g class="draggable-pos" data-match="'+match.id+'" data-half="'+half+'" data-pos="'+posStr+'" transform="translate('+cx+','+cy+')" style="cursor:pointer; -webkit-tap-highlight-color:transparent;">'
-              +'<circle cx="0" cy="0" r="14" fill="'+color+'" opacity="0.95"'+stroke+'/>';
+          out+='<g class="draggable-pos" data-match="'+match.id+'" data-half="'+half+'" data-pos="'+posStr+'" transform="translate('+cx+','+cy+')" style="cursor:pointer; -webkit-tap-highlight-color:transparent;" onclick="if(!window.formationDragMatchId) openPositionModal(\''+match.id+'\', \''+half+'\', \''+posStr+'\')">'
+              +'<circle cx="0" cy="0" r="14" fill="'+color+'" opacity="0.95" stroke="white" stroke-width="1.5"/>';
           const fs = label.length > 3 ? 5 : 6.5;
           const textCol = assignedPlayer ? '#0a0e1a' : 'rgba(10,14,26,0.6)';
           out+='<text x="0" y="2.5" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="'+textCol+'">'+escHtml(label)+'</text>'
@@ -567,8 +569,10 @@
     function renderFormationSection(match) {
       if (!state.activeFormationHalf) state.activeFormationHalf = {};
       if (!state.collapsedFormations) state.collapsedFormations = {};
-      // Default to collapsed if not explicitly set to false
-      const isCollapsed = state.collapsedFormations[match.id] !== false;
+      
+      const isDragActive = window.formationDragMatchId === match.id;
+      const disableOthers = isDragActive ? ' pointer-events:none; opacity:0.3;' : '';
+      const isCollapsed = isDragActive ? false : (state.collapsedFormations[match.id] !== false);
       const chevron = isCollapsed ? '&#x25BC;' : '&#x25B2;';
 
       const halves = ['\u524d\u534a','\u5f8c\u534a'];
@@ -593,7 +597,7 @@
         countText = '<span style="font-size:0.7rem; color:var(--text-muted); margin-left:8px; font-weight:normal;">' + counts.join(' / ') + '</span>';
       }
 
-      const titleHtml = '<div class="formation-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:'+(isCollapsed?'0':'12px')+';" onclick="toggleFormation(\''+match.id+'\')">'
+      const titleHtml = '<div class="formation-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:'+(isCollapsed?'0':'12px')+';'+disableOthers+'" onclick="toggleFormation(\''+match.id+'\')">'
          + '<div style="display:flex; align-items:center;"><span>&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</span>' + countText + '</div>'
          + '<span style="font-size:0.8rem; padding:4px;">'+chevron+'</span>'
          + '</div>';
@@ -621,30 +625,6 @@
           return '<div class="formation-field">'
             +'<label class="'+lblClass+'-label">'+pos.toUpperCase()+'</label>'
             +'<div class="formation-num">'
-            +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',-1)">&minus;</button>'
-            +'<span id="f-'+match.id+'-'+half+'-'+pos+'">'+f[pos]+'</span>'
-            +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',1)">&#xFF0B;</button>'
-            +'</div></div>';
-        }
-        return '<div class="formation-half-block" style="max-width:400px; margin:0 auto;">'
-          +'<div style="display:flex;align-items:center;justify-content:center;margin-bottom:8px">'
-          +'<span class="formation-badge" id="'+badgeId+'">GK-'+f.df+'-'+f.mf+'-'+f.fw+'</span>'
-          +'</div>'
-          +'<div class="pitch-wrap">'
-          +'<svg id="'+svgId+'" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">'
-          +buildPitchContent(f, match, half)
-          +'</svg></div>'
-          +'<div class="formation-inputs" style="justify-content:center; margin-top:8px;">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
-          +'<div style="display:flex; justify-content:center; gap:8px; margin-top:12px;">'
-          +'<button class="btn ' + (window.isFormationDragMode ? 'btn-primary' : 'btn-ghost') + ' btn-sm" style="padding:6px 12px; border-radius:50px; font-size:0.75rem; border:1px solid var(' + (window.isFormationDragMode ? '--accent-primary' : '--border-glass') + ');" onclick="toggleFormationDragMode()">'
-          +(window.isFormationDragMode ? '&#x2714;&#xFE0F; 完了' : '&#x2194;&#xFE0F; 位置の調整')
-          +'</button>'
-          +'<button class="btn ' + (window.isPositionSwapMode ? 'btn-primary' : 'btn-ghost') + ' btn-sm" style="padding:6px 12px; border-radius:50px; font-size:0.75rem; border:1px solid var(' + (window.isPositionSwapMode ? '--accent-primary' : '--border-glass') + ');" onclick="togglePositionSwapMode()">'
-          +(window.isPositionSwapMode ? '&#x2714;&#xFE0F; 完了' : '&#x1F504; ポジション入替')
-          +'</button>'
-          +'</div>'
-          +'</div>';
-      }).join('');
       return '<div class="formation-section">' + titleHtml
         +tabsHtml+'<div class="formation-halves">'+halvesHtml+'</div></div>';
     }
@@ -952,12 +932,17 @@
       rows+='<tr class="count-row"><td class="count-label">\u51fa\u5834</td>'+countCells+'</tr>';
       const metaTime=match.time?'<span>&#x1F550; '+escHtml(match.time)+'</span>':'';
       const metaOpp=match.opponent?'<span>VS '+escHtml(match.opponent)+'</span>':'';
-      return '<div class="match-card '+editClass+'" id="match-'+match.id+'">'
-        +'<div class="match-header"><div class="match-info"><div class="match-name">'+escHtml(match.name)+'</div><div class="match-meta">'+metaTime+metaOpp+'</div></div>'
+      const anyDrag = window.formationDragMatchId !== null;
+      const isThisDrag = window.formationDragMatchId === match.id;
+      const cardOpacity = (anyDrag && !isThisDrag) ? '0.4' : '1';
+      const disableOthers = isThisDrag ? ' pointer-events:none; opacity:0.3;' : (anyDrag ? ' pointer-events:none;' : '');
+
+      return '<div class="match-card '+editClass+'" id="match-'+match.id+'" style="opacity:'+cardOpacity+';">'
+        +'<div class="match-header" style="'+disableOthers+'"><div class="match-info"><div class="match-name">'+escHtml(match.name)+'</div><div class="match-meta">'+metaTime+metaOpp+'</div></div>'
         +'<div class="match-actions">'+(state.editMode?'<button class="btn btn-danger btn-sm" onclick="removeMatch(\''+match.id+'\')">\u524a\u9664</button>':'')+'</div></div>'
-        +editRow
+        +(editRow ? '<div style="'+disableOthers+'">'+editRow+'</div>' : '')
         +renderFormationSection(match)
-        +'<div class="table-wrapper"><table class="match-table"><thead><tr><th style="min-width:50px;"></th>'+playerHeaders+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+        +'<div class="table-wrapper" style="'+disableOthers+'"><table class="match-table"><thead><tr><th style="min-width:50px;"></th>'+playerHeaders+'</tr></thead><tbody>'+rows+'</tbody></table></div>'
         +'</div>';
     }
 
@@ -1005,25 +990,16 @@
       showToast('\uD83D\uDDD1\uFE0F \u5168\u30c7\u30fc\u30bf\u3092\u524a\u9664\u3057\u307e\u3057\u305f');
     }
 
-    window.isFormationDragMode = false;
-    window.isPositionSwapMode = false;
-    window.swapSourcePos = null;
+    window.formationDragMatchId = null;
 
-    function toggleFormationDragMode() {
-      window.isFormationDragMode = !window.isFormationDragMode;
-      if (window.isFormationDragMode) {
-        window.isPositionSwapMode = false;
-        window.swapSourcePos = null;
+    function toggleFormationDragMode(matchId) {
+      if (window.formationDragMatchId === matchId) {
+        window.formationDragMatchId = null;
+        document.body.classList.remove('drag-mode-active');
+      } else {
+        window.formationDragMatchId = matchId;
+        document.body.classList.add('drag-mode-active');
       }
-      render();
-    }
-
-    function togglePositionSwapMode() {
-      window.isPositionSwapMode = !window.isPositionSwapMode;
-      if (window.isPositionSwapMode) {
-        window.isFormationDragMode = false;
-      }
-      window.swapSourcePos = null;
       render();
     }
 
@@ -1033,8 +1009,10 @@
     let dragHasMoved = false;
 
     function handlePointerDown(e) {
+      if (!window.formationDragMatchId) return; // Only process dragging if mode is active
+
       const g = e.target.closest('.draggable-pos');
-      if (!g) return;
+      if (!g || g.dataset.match !== window.formationDragMatchId) return;
       
       dragElement = g;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1051,10 +1029,8 @@
       dragElement.dataset.origX = cx;
       dragElement.dataset.origY = cy;
 
-      if (window.isFormationDragMode) {
-        dragElement.style.opacity = '0.7';
-        if (e.type === 'touchstart') e.preventDefault();
-      }
+      dragElement.style.opacity = '0.7';
+      if (e.type === 'touchstart') e.preventDefault();
     }
 
     function handlePointerMove(e) {
@@ -1066,11 +1042,11 @@
       const dx = clientX - dragStartCoords.x;
       const dy = clientY - dragStartCoords.y;
       
-      if (!dragHasMoved && Math.hypot(dx, dy) > 5) {
+      if (!dragHasMoved && Math.hypot(dx, dy) > 10) {
         dragHasMoved = true;
       }
 
-      if (window.isFormationDragMode && dragHasMoved) {
+      if (dragHasMoved) {
         if (e.type === 'touchmove') e.preventDefault();
         const svg = dragElement.closest('svg');
         const rect = svg.getBoundingClientRect();
@@ -1091,51 +1067,22 @@
       if (!dragElement) return;
       dragElement.style.opacity = '1';
 
-      const matchId = dragElement.dataset.match;
-      const half = dragElement.dataset.half;
-      const posStr = dragElement.dataset.pos;
-
-      if (!dragHasMoved) {
-        // Tapped a circle
-        if (window.isPositionSwapMode) {
-           if (!window.swapSourcePos) {
-              window.swapSourcePos = { matchId, half, posStr };
-              render();
-           } else {
-              if (window.swapSourcePos.matchId === matchId && window.swapSourcePos.half === half && window.swapSourcePos.posStr !== posStr) {
-                 const match = state.matches.find(m => m.id === matchId);
-                 if (match) {
-                    let p1 = null, p2 = null;
-                    state.players.forEach(p => {
-                      if (match.appearances[half][p] === window.swapSourcePos.posStr) p1 = p;
-                      if (match.appearances[half][p] === posStr) p2 = p;
-                    });
-                    if (p1) match.appearances[half][p1] = posStr;
-                    if (p2) match.appearances[half][p2] = window.swapSourcePos.posStr;
-                    saveState();
-                 }
-              }
-              window.swapSourcePos = null;
-              render();
-           }
-        } else if (!window.isFormationDragMode) {
-           // Normal default mode
-           openPositionModal(matchId, half, posStr);
-        }
-      } else {
-        if (window.isFormationDragMode) {
-          const tf = dragElement.getAttribute('transform');
-          if (tf) {
-            const m = tf.match(/translate\(([^,]+),\s*([^\)]+)\)/);
-            if (m) {
-               const cx = parseFloat(m[1]);
-               const cy = parseFloat(m[2]);
-               if (!state.customPositions) state.customPositions = {};
-               if (!state.customPositions[matchId]) state.customPositions[matchId] = {};
-               if (!state.customPositions[matchId][half]) state.customPositions[matchId][half] = {};
-               state.customPositions[matchId][half][posStr] = { x: cx, y: cy };
-               saveState();
-            }
+      if (dragHasMoved) {
+        const matchId = dragElement.dataset.match;
+        const half = dragElement.dataset.half;
+        const posStr = dragElement.dataset.pos;
+        
+        const tf = dragElement.getAttribute('transform');
+        if (tf) {
+          const m = tf.match(/translate\(([^,]+),\s*([^\)]+)\)/);
+          if (m) {
+             const cx = parseFloat(m[1]);
+             const cy = parseFloat(m[2]);
+             if (!state.customPositions) state.customPositions = {};
+             if (!state.customPositions[matchId]) state.customPositions[matchId] = {};
+             if (!state.customPositions[matchId][half]) state.customPositions[matchId][half] = {};
+             state.customPositions[matchId][half][posStr] = { x: cx, y: cy };
+             saveState();
           }
         }
       }
