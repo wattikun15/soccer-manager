@@ -816,9 +816,7 @@
           if (s) {
             if (s==='play' || (s>='1' && s<='7') || s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW')) fp++; 
             else if(s==='gk') gk++;
-            else if(s==='none' || s==='rest') rest++;
-          } else {
-            rest++;
+            else if(s==='rest') rest++;
           }
         }); 
       });
