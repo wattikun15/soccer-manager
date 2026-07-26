@@ -278,6 +278,16 @@
     </div>
   </div>
 
+  <!-- 選手履歴モーダル -->
+  <div class="modal-overlay" id="playerHistoryModal">
+    <div class="modal" style="max-width: 360px; margin:0 auto; max-height:80vh; display:flex; flex-direction:column;">
+      <div class="modal-handle"></div>
+      <h3 style="text-align:center; font-size:1.1rem; margin-bottom:16px; color:var(--text-primary);" id="playerHistoryModalTitle"></h3>
+      <div id="playerHistoryList" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; margin-bottom:16px;"></div>
+      <button class="btn btn-ghost" style="width:100%; justify-content:center; padding:12px; border:1px solid var(--border-glass); color:var(--text-muted);" onclick="closeModal('playerHistoryModal')">閉じる</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -700,7 +710,7 @@
     function getStatusDisplay(status) {
       if (status==='play') return '&#x25CB;';
       if (status==='gk') return 'GK';
-      if (status>='1' && status<='7') return status;
+      if (status==='none') return '<span class="none-dash">-</span>';
       if (status.startsWith('DF') || status.startsWith('MF') || status.startsWith('FW')) {
          let color = '#60a5fa';
          if (status.startsWith('MF')) color = '#34d399';
@@ -708,6 +718,35 @@
          return `<span style="color:${color}; font-size:0.8rem; letter-spacing:-0.5px;">${status}</span>`;
       }
       return '';
+    }
+
+    function openPlayerHistoryModal(playerName) {
+      document.getElementById('playerHistoryModalTitle').innerHTML = '&#x1F4CB; ' + escHtml(playerName) + ' の履歴';
+      let html = '';
+      if (state.matches.length === 0) {
+        html = '<p style="text-align:center; color:var(--text-muted); font-size:0.9rem;">試合がありません</p>';
+      } else {
+        state.matches.forEach(m => {
+          const getPosName = (half) => {
+            const s = m.appearances[half][playerName];
+            if (!s || s === 'none') return '<span style="color:var(--text-muted);">休</span>';
+            if (s === 'gk') return '<span style="color:var(--accent-amber);font-weight:bold;">GK</span>';
+            if (s === 'play') return '<span style="color:var(--accent-green);font-weight:bold;">出場 (未定)</span>';
+            if (s.startsWith('DF')) return '<span style="color:#60a5fa;font-weight:bold;">' + s + '</span>';
+            if (s.startsWith('MF')) return '<span style="color:#34d399;font-weight:bold;">' + s + '</span>';
+            if (s.startsWith('FW')) return '<span style="color:#f87171;font-weight:bold;">' + s + '</span>';
+            return '<span style="font-weight:bold;color:var(--text-primary);">' + s + '</span>';
+          };
+          html += '<div style="background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:10px;">'
+                + '<div style="font-weight:bold; color:var(--text-primary); margin-bottom:6px; font-size:0.9rem;">' + escHtml(m.name) + '</div>'
+                + '<div style="display:flex; justify-content:space-between; font-size:0.85rem;">'
+                + '<div><span style="color:var(--text-muted); margin-right:4px;">前半:</span> ' + getPosName('\u524d\u534a') + '</div>'
+                + '<div><span style="color:var(--text-muted); margin-right:4px;">後半:</span> ' + getPosName('\u5f8c\u534a') + '</div>'
+                + '</div></div>';
+        });
+      }
+      document.getElementById('playerHistoryList').innerHTML = html;
+      document.getElementById('playerHistoryModal').classList.add('active');
     }
 
     // ===== Counting =====
@@ -860,14 +899,18 @@
         
         const countDisplay = state.playerEditMode ? '' : '<div style="margin-left:auto;">'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div>';
 
+        const nameDisplay = state.playerEditMode 
+            ? '<span class="player-name">'+escHtml(player)+'</span>'
+            : '<span class="player-name" style="cursor:pointer; color:var(--text-primary); text-decoration:underline; text-decoration-color:var(--border-subtle); text-underline-offset:4px;" onclick="openPlayerHistoryModal(\''+escHtml(player)+'\')">'+escHtml(player)+'</span>';
+
         return '<div class="total-item" style="display:flex; align-items:center; gap:8px;">'
              + actions
-             + '<span class="player-name">'+escHtml(player)+'</span>'
+             + nameDisplay
              + countDisplay
              + '</div>';
       }).join('');
-      return '<div class="total-section"><div class="section-title">&#x1F4CA; \u51fa\u5834\u56de\u6570\u30b5\u30de\u30ea\u30fc</div>'
-        +'<div class="total-card"><div class="total-header">\u5168'+state.matches.length+'\u8a66\u5408 \u5408\u8a08\u51fa\u5834\u56de\u6570</div>'
+      return '<div class="total-section">'
+        +'<div class="total-card">'
         +'<div class="total-grid">'+items+'</div></div></div>';
     }
 
