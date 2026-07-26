@@ -534,7 +534,7 @@
           }
           let label = assignedPlayer ? shortName(assignedPlayer) : (prefix === 'GK' ? 'GK' : posStr);
           out+='<g class="draggable-pos" data-match="'+match.id+'" data-half="'+half+'" data-pos="'+posStr+'" transform="translate('+cx+','+cy+')" style="cursor:pointer; -webkit-tap-highlight-color:transparent;" onclick="if(!window.formationDragMatchId) openPositionModal(\''+match.id+'\', \''+half+'\', \''+posStr+'\')">'
-              +'<circle cx="0" cy="0" r="14" fill="'+color+'" opacity="0.95" stroke="white" stroke-width="1.5"/>';
+              +'<circle cx="0" cy="0" r="15" fill="'+color+'" opacity="0.95"/>';
           const fs = label.length > 3 ? 5 : 6.5;
           const textCol = assignedPlayer ? '#0a0e1a' : 'rgba(10,14,26,0.6)';
           out+='<text x="0" y="2.5" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="'+textCol+'">'+escHtml(label)+'</text>'
@@ -809,17 +809,20 @@
 
     // ===== Counting =====
     function countPlayerTotal(playerName) {
-      let fp=0, gk=0;
+      let fp=0, gk=0, rest=0;
       state.matches.forEach(m => { 
         ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
           const s=m.appearances[h][playerName]; 
           if (s) {
             if (s==='play' || (s>='1' && s<='7') || s.startsWith('DF') || s.startsWith('MF') || s.startsWith('FW')) fp++; 
             else if(s==='gk') gk++;
+            else if(s==='none' || s==='rest') rest++;
+          } else {
+            rest++;
           }
         }); 
       });
-      return { fp, gk, total: fp+gk };
+      return { fp, gk, rest, total: fp+gk };
     }
     function countPlayerInMatch(matchId, playerName) {
       const match = state.matches.find(m => m.id === matchId);
@@ -973,6 +976,7 @@
         let cls='zero';
         if (max>0) { const r=count/max; if(r>=0.7) cls='top'; else if(r>=0.4) cls='mid'; else if(r>0) cls='low'; }
         const gkHtml = counts.gk > 0 ? `<span style="font-size:0.65rem;color:var(--text-muted);margin-right:6px;">FP:${counts.fp} GK:${counts.gk}</span>` : '';
+        const restHtml = `<span style="font-size:0.75rem;color:var(--text-muted);margin-right:6px;">(休:${counts.rest})</span>`;
         
         let actions = '';
         if (state.playerEditMode) {
@@ -980,7 +984,7 @@
                   + '<button class="btn btn-ghost btn-sm" style="padding:2px 8px; color:var(--accent-red); font-size:1rem;" onclick="removePlayer(\''+escHtml(player)+'\')">&#x1F5D1;&#xFE0F;</button>';
         }
         
-        const countDisplay = state.playerEditMode ? '' : '<div style="margin-left:auto;">'+gkHtml+'<span class="total-count '+cls+'">'+count+'</span></div>';
+        const countDisplay = state.playerEditMode ? '' : '<div style="margin-left:auto;">'+gkHtml+restHtml+'<span class="total-count '+cls+'">'+count+'</span></div>';
 
         const nameDisplay = state.playerEditMode 
             ? '<span class="player-name">'+escHtml(player)+'</span>'
