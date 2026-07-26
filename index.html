@@ -540,11 +540,30 @@
     function renderFormationSection(match) {
       if (!state.activeFormationHalf) state.activeFormationHalf = {};
       if (!state.collapsedFormations) state.collapsedFormations = {};
-      const isCollapsed = state.collapsedFormations[match.id];
+      // Default to collapsed if not explicitly set to false
+      const isCollapsed = state.collapsedFormations[match.id] !== false;
       const chevron = isCollapsed ? '&#x25BC;' : '&#x25B2;';
 
+      const halves = ['\u524d\u534a','\u5f8c\u534a'];
+      let countText = '';
+      if (state.players && state.players.length > 0) {
+        const counts = halves.map(h => {
+          const f = (match.formation && match.formation[h]) ? match.formation[h] : {df:3,mf:3,fw:1};
+          const req = f.df + f.mf + f.fw + 1;
+          let assigned = 0;
+          state.players.forEach(p => {
+            if (match.appearances[h] && match.appearances[h][p] && match.appearances[h][p] !== 'none') {
+              assigned++;
+            }
+          });
+          const color = assigned === req ? 'var(--accent-green)' : (assigned > req ? 'var(--accent-red)' : 'var(--text-muted)');
+          return h + ': <span style="color:'+color+'; font-weight:700;">' + assigned + '/' + req + '人</span>';
+        });
+        countText = '<span style="font-size:0.7rem; color:var(--text-muted); margin-left:8px; font-weight:normal;">(' + counts.join(', ') + ')</span>';
+      }
+
       const titleHtml = '<div class="formation-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:'+(isCollapsed?'0':'12px')+';" onclick="toggleFormation(\''+match.id+'\')">'
-         + '<span>&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</span>'
+         + '<div style="display:flex; align-items:center;"><span>&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</span>' + countText + '</div>'
          + '<span style="font-size:0.8rem; padding:4px;">'+chevron+'</span>'
          + '</div>';
 
@@ -552,7 +571,6 @@
         return '<div class="formation-section">' + titleHtml + '</div>';
       }
 
-      const halves = ['\u524d\u534a','\u5f8c\u534a'];
       const activeHalf = state.activeFormationHalf[match.id] || halves[0];
       
       const tabs = halves.map(half => {
