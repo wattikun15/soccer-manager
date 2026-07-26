@@ -808,13 +808,16 @@
       } else {
         state.matches.forEach(m => {
           const getPosName = (half) => {
-            const s = m.appearances[half][playerName];
-            if (!s || s === 'none' || s === 'rest') return '<span style="color:var(--text-muted);">休</span>';
+            let s = m.appearances[half][playerName];
+            if (!s || s === 'none') return '<span style="color:var(--text-muted);">未選択</span>';
+            if (s === 'rest') return '<span style="color:var(--text-muted);font-weight:bold;">休</span>';
+            s = String(s);
             if (s === 'gk') return '<span style="color:var(--accent-amber);font-weight:bold;">GK</span>';
             if (s === 'play') return '<span style="color:var(--accent-green);font-weight:bold;">出場 (未定)</span>';
-            if (s.startsWith('DF')) return '<span style="color:#60a5fa;font-weight:bold;">' + s + '</span>';
-            if (s.startsWith('MF')) return '<span style="color:#34d399;font-weight:bold;">' + s + '</span>';
-            if (s.startsWith('FW')) return '<span style="color:#f87171;font-weight:bold;">' + s + '</span>';
+            const up = s.toUpperCase();
+            if (up.startsWith('DF')) return '<span style="color:#60a5fa;font-weight:bold;">' + up + '</span>';
+            if (up.startsWith('MF')) return '<span style="color:#34d399;font-weight:bold;">' + up + '</span>';
+            if (up.startsWith('FW')) return '<span style="color:#f87171;font-weight:bold;">' + up + '</span>';
             return '<span style="font-weight:bold;color:var(--text-primary);">' + s + '</span>';
           };
           html += '<div style="background:rgba(30,41,59,0.5); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:10px;">'
@@ -834,8 +837,9 @@
       let fp=0, gk=0, rest=0;
       state.matches.forEach(m => { 
         ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
-          const s=m.appearances[h][playerName]; 
-          if (s) {
+          const rawS=m.appearances[h][playerName]; 
+          if (rawS) {
+            const s = String(rawS);
             const up = s.toUpperCase();
             if (s==='play' || (s>='1' && s<='7') || up.startsWith('DF') || up.startsWith('MF') || up.startsWith('FW')) fp++; 
             else if(s==='gk') gk++;
@@ -850,8 +854,9 @@
       if (!match) return { fp:0, gk:0, total:0 };
       let fp=0, gk=0;
       ['\u524d\u534a','\u5f8c\u534a'].forEach(h => { 
-        const s=match.appearances[h][playerName]; 
-        if (s) {
+        const rawS=match.appearances[h][playerName]; 
+        if (rawS) {
+          const s = String(rawS);
           const up = s.toUpperCase();
           if (s==='play' || (s>='1' && s<='7') || up.startsWith('DF') || up.startsWith('MF') || up.startsWith('FW')) fp++; 
           else if(s==='gk') gk++;
