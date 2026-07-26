@@ -109,7 +109,7 @@
     .total-card .total-header { padding:14px 16px; background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(6,182,212,0.05)); border-bottom:1px solid var(--border-glass); font-size:0.9rem; font-weight:700; }
     .total-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:1px; background:var(--border-subtle); }
     .total-item { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:var(--bg-secondary); }
-    .total-item .player-name { font-size:0.82rem; font-weight:600; color:var(--text-primary); }
+    .total-item .player-name { font-size:0.82rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1; margin-right:8px; }
     .total-item .total-count { display:inline-flex; align-items:center; justify-content:center; min-width:28px; height:28px; padding:0 8px; border-radius:50px; font-size:0.8rem; font-weight:800; }
     .total-item .total-count.top { background:rgba(34,197,94,0.15); color:var(--accent-green); }
     .total-item .total-count.mid { background:rgba(99,102,241,0.15); color:var(--accent-secondary); }
