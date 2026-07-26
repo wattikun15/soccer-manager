@@ -511,8 +511,27 @@
       render();
     }
 
+    function toggleFormation(matchId) {
+      if (!state.collapsedFormations) state.collapsedFormations = {};
+      state.collapsedFormations[matchId] = !state.collapsedFormations[matchId];
+      render();
+    }
+
     function renderFormationSection(match) {
       if (!state.activeFormationHalf) state.activeFormationHalf = {};
+      if (!state.collapsedFormations) state.collapsedFormations = {};
+      const isCollapsed = state.collapsedFormations[match.id];
+      const chevron = isCollapsed ? '&#x25BC;' : '&#x25B2;';
+
+      const titleHtml = '<div class="formation-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:'+(isCollapsed?'0':'12px')+';" onclick="toggleFormation(\''+match.id+'\')">'
+         + '<span>&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</span>'
+         + '<span style="font-size:0.8rem; padding:4px;">'+chevron+'</span>'
+         + '</div>';
+
+      if (isCollapsed) {
+        return '<div class="formation-section">' + titleHtml + '</div>';
+      }
+
       const halves = ['\u524d\u534a','\u5f8c\u534a'];
       const activeHalf = state.activeFormationHalf[match.id] || halves[0];
       
@@ -527,7 +546,6 @@
       let halvesHtml = halves.map((half, idx) => {
         if (half !== activeHalf) return '';
         const f = (match.formation && match.formation[half]) ? match.formation[half] : {df:3,mf:3,fw:1};
-        const labelClass = idx===1 ? 'second' : '';
         const badgeId = 'formation-badge-'+match.id+'-'+(idx+1);
         const svgId = 'pitch-svg-'+match.id+'-'+(idx+1);
         function spinner(pos, lblClass) {
@@ -550,7 +568,7 @@
           +'<div class="formation-inputs" style="justify-content:center; margin-top:8px;">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
           +'</div>';
       }).join('');
-      return '<div class="formation-section"><div class="formation-title" style="text-align:center;">&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</div>'
+      return '<div class="formation-section">' + titleHtml
         +tabsHtml+'<div class="formation-halves">'+halvesHtml+'</div></div>';
     }
 
