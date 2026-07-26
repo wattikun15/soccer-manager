@@ -191,7 +191,7 @@
     <div class="header-top" style="margin-bottom:0;">
       <h1 class="app-title">&#x26BD; 出場管理</h1>
       <div class="header-actions">
-        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 試合の編集</button>
+        <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 試合編集</button>
       </div>
     </div>
   </header>
@@ -716,7 +716,7 @@
       state.editMode = !state.editMode;
       const btn = document.getElementById('editToggle');
       btn.classList.toggle('active', state.editMode);
-      btn.innerHTML = state.editMode ? '&#x270F;&#xFE0F; 完 了' : '&#x270F;&#xFE0F; 試合の編集';
+      btn.innerHTML = state.editMode ? '&#x270F;&#xFE0F; 完 了' : '&#x270F;&#xFE0F; 試合編集';
       render();
     }
     function togglePlayerEditMode() {
@@ -747,7 +747,7 @@
       state.matches.forEach(m => { html += renderMatchCard(m); });
       if (state.players.length>0) html += renderTotalSummary();
       
-      let playerEditLabel = state.playerEditMode ? '&#x270F;&#xFE0F; 完了' : '&#x270F;&#xFE0F; 人の修正';
+      let playerEditLabel = state.playerEditMode ? '&#x270F;&#xFE0F; 完了' : '&#x270F;&#xFE0F; 選手編集';
       let actionBtns = '<button class="btn btn-success" style="padding:10px 20px; font-size:1rem;" onclick="openPlayerModal()">&#xFF0B; 選手</button>';
       if (state.players.length > 0) {
         actionBtns += '<button class="btn btn-ghost" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode()">'+playerEditLabel+'</button>';
