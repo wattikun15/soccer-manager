@@ -664,17 +664,34 @@
       
       let html = `<button class="btn btn-ghost" style="width:100%; justify-content:center; padding:12px; margin-bottom:12px; border:1px solid rgba(239,68,68,0.3); color:var(--accent-red);" onclick="clearPosition()">はずす (クリア)</button>`;
       
+      let normalPlayers = [];
+      let restingPlayers = [];
+      
       state.players.forEach(p => {
          const currentStatus = match.appearances[half][p] || 'none';
-         if (currentStatus !== 'none' && currentStatus !== 'play' && currentStatus !== posStr) {
-           return;
+         if (currentStatus === posStr || currentStatus === 'none' || currentStatus === 'play') {
+            normalPlayers.push({ name: p, status: currentStatus });
+         } else if (currentStatus === 'rest') {
+            restingPlayers.push({ name: p, status: currentStatus });
          }
+      });
+      
+      normalPlayers.forEach(obj => {
+         const p = obj.name;
+         const currentStatus = obj.status;
          const isAssignedToThis = currentStatus === posStr;
          const label = currentStatus === 'none' ? '' : ` <span style="font-size:0.7rem; color:var(--text-muted);">(${currentStatus === 'play' ? '出場' : currentStatus})</span>`;
          const bg = isAssignedToThis ? 'rgba(99,102,241,0.15)' : 'transparent';
          const border = isAssignedToThis ? 'border:1px solid var(--accent-primary);' : 'border:1px solid var(--border-glass);';
          html += `<button class="btn btn-ghost" style="width:100%; justify-content:flex-start; padding:12px; margin-bottom:6px; background:${bg}; ${border}" onclick="setPlayerForPosition('${escHtml(p)}')">${escHtml(p)}${label}</button>`;
       });
+
+      restingPlayers.forEach(obj => {
+         const p = obj.name;
+         const label = ` <span style="font-size:0.7rem; color:var(--text-muted);">(休憩)</span>`;
+         html += `<button class="btn btn-ghost" style="width:100%; justify-content:flex-start; padding:12px; margin-bottom:6px; background:transparent; border:1px solid var(--border-glass); opacity:0.7;" onclick="setPlayerForPosition('${escHtml(p)}')">${escHtml(p)}${label}</button>`;
+      });
+
       document.getElementById('posModalList').innerHTML = html;
       document.getElementById('posModal').classList.add('active');
     }
