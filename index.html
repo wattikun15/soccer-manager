@@ -625,6 +625,25 @@
           return '<div class="formation-field">'
             +'<label class="'+lblClass+'-label">'+pos.toUpperCase()+'</label>'
             +'<div class="formation-num">'
+            +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',-1)">&minus;</button>'
+            +'<span id="f-'+match.id+'-'+half+'-'+pos+'">'+f[pos]+'</span>'
+            +'<button onclick="updateFormation(\''+match.id+'\',\''+half+'\',\''+pos+'\',1)">&#xFF0B;</button>'
+            +'</div></div>';
+        }
+        return '<div class="formation-half-block" style="max-width:400px; margin:0 auto;">'
+          +'<div style="display:flex;align-items:center;justify-content:center;margin-bottom:8px">'
+          +'<span class="formation-badge" id="'+badgeId+'">GK-'+f.df+'-'+f.mf+'-'+f.fw+'</span>'
+          +'</div>'
+          +'<div class="pitch-wrap">'
+          +'<svg id="'+svgId+'" viewBox="0 0 140 200" class="pitch-svg-container" xmlns="http://www.w3.org/2000/svg">'
+          +buildPitchContent(f, match, half)
+          +'</svg></div>'
+          +'<div class="formation-inputs" style="justify-content:center; margin-top:8px;'+disableOthers+'">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
+          +'<div style="display:flex; justify-content:center; gap:8px; margin-top:12px;">'
+          +(isDragActive ? '<button class="btn btn-primary btn-sm" style="padding:6px 16px; border-radius:50px; font-size:0.85rem;" onclick="toggleFormationDragMode(\''+match.id+'\')">&#x2714;&#xFE0F; 完了</button>' : '<button class="btn btn-ghost btn-sm" style="padding:6px 12px; border-radius:50px; font-size:0.75rem; border:1px solid var(--border-glass);" onclick="toggleFormationDragMode(\''+match.id+'\')">&#x2194;&#xFE0F; 位置の調整</button>')
+          +'</div>'
+          +'</div>';
+      }).join('');
       return '<div class="formation-section">' + titleHtml
         +tabsHtml+'<div class="formation-halves">'+halvesHtml+'</div></div>';
     }
