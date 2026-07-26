@@ -1002,7 +1002,7 @@
         const count=counts.total;
         let cls='zero';
         if (max>0) { const r=count/max; if(r>=0.7) cls='top'; else if(r>=0.4) cls='mid'; else if(r>0) cls='low'; }
-        const gkHtml = counts.gk > 0 ? `<span style="font-size:0.65rem;color:var(--text-muted);margin-right:6px;">FP:${counts.fp} GK:${counts.gk}</span>` : '';
+        const gkHtml = `<span style="font-size:0.65rem;color:var(--text-muted);margin-right:6px;">FP:${counts.fp} GK:${counts.gk}</span>`;
         const restHtml = `<span style="font-size:0.75rem;color:var(--text-muted);margin-right:6px;">(休:${counts.rest})</span>`;
         
         let actions = '';
