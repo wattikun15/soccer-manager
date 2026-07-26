@@ -410,6 +410,11 @@
       if (newVal < 0) return;
       if (delta > 0 && total >= 7) return;
       f[pos] = newVal;
+
+      if (!state.customPositions) state.customPositions = {};
+      if (!state.customPositions[matchId]) state.customPositions[matchId] = {};
+      state.customPositions[matchId][half] = {};
+
       saveState();
       updatePitchSvg(matchId, half);
       const halfIdx = half === '\u524d\u534a' ? '1' : '2';
@@ -463,8 +468,15 @@
         if (count===0) return '';
         const sp=W/(count+1); let out='';
         for (let i=0;i<count;i++) {
-          const x=sp*(i+1);
+          let cx=sp*(i+1);
+          let cy=y;
           let posStr = prefix === 'GK' ? 'gk' : prefix + (i+1);
+          
+          if (state.customPositions && state.customPositions[match.id] && state.customPositions[match.id][half] && state.customPositions[match.id][half][posStr]) {
+             cx = state.customPositions[match.id][half][posStr].x;
+             cy = state.customPositions[match.id][half][posStr].y;
+          }
+
           let assignedPlayer = '';
           if (prefix === 'GK') {
             assignedPlayer = gkPlayer;
@@ -484,11 +496,11 @@
             }
           }
           let label = assignedPlayer ? shortName(assignedPlayer) : (prefix === 'GK' ? 'GK' : posStr);
-          out+='<g onclick="openPositionModal(\''+match.id+'\',\''+half+'\',\''+posStr+'\')" style="cursor:pointer; -webkit-tap-highlight-color:transparent;">'
-              +'<circle cx="'+x+'" cy="'+y+'" r="15" fill="'+color+'" opacity="0.95"/>';
+          out+='<g class="draggable-pos" data-match="'+match.id+'" data-half="'+half+'" data-pos="'+posStr+'" transform="translate('+cx+','+cy+')" style="cursor:pointer; -webkit-tap-highlight-color:transparent;">'
+              +'<circle cx="0" cy="0" r="15" fill="'+color+'" opacity="0.95"/>';
           const fs = label.length > 3 ? 5 : 6.5;
           const textCol = assignedPlayer ? '#0a0e1a' : 'rgba(10,14,26,0.6)';
-          out+='<text x="'+x+'" y="'+(y+2.5)+'" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="'+textCol+'">'+escHtml(label)+'</text>'
+          out+='<text x="0" y="2.5" text-anchor="middle" font-size="'+fs+'" font-weight="700" fill="'+textCol+'">'+escHtml(label)+'</text>'
               +'</g>';
         }
         return out;
@@ -830,6 +842,103 @@
       saveState(); render();
       showToast('\uD83D\uDDD1\uFE0F \u5168\u30c7\u30fc\u30bf\u3092\u524a\u9664\u3057\u307e\u3057\u305f');
     }
+
+    // ===== Draggable Formations =====
+    let dragElement = null;
+    let dragStartCoords = {x:0, y:0};
+    let dragHasMoved = false;
+
+    function handlePointerDown(e) {
+      const g = e.target.closest('.draggable-pos');
+      if (!g) return;
+      dragElement = g;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      dragStartCoords = { x: clientX, y: clientY };
+      dragHasMoved = false;
+      dragElement.style.opacity = '0.7';
+      
+      const tf = dragElement.getAttribute('transform');
+      let cx = 0, cy = 0;
+      if (tf) {
+        const m = tf.match(/translate\(([^,]+),\s*([^\)]+)\)/);
+        if (m) { cx = parseFloat(m[1]); cy = parseFloat(m[2]); }
+      }
+      dragElement.dataset.origX = cx;
+      dragElement.dataset.origY = cy;
+      
+      if (e.type === 'touchstart') e.preventDefault();
+    }
+
+    function handlePointerMove(e) {
+      if (!dragElement) return;
+      
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const dx = clientX - dragStartCoords.x;
+      const dy = clientY - dragStartCoords.y;
+      
+      if (!dragHasMoved && Math.hypot(dx, dy) > 5) {
+        dragHasMoved = true;
+      }
+
+      if (dragHasMoved) {
+        const svg = dragElement.closest('svg');
+        const rect = svg.getBoundingClientRect();
+        const scaleX = 140 / rect.width;
+        const scaleY = 200 / rect.height;
+        
+        let newX = parseFloat(dragElement.dataset.origX) + dx * scaleX;
+        let newY = parseFloat(dragElement.dataset.origY) + dy * scaleY;
+        
+        // Boundaries
+        if (newX < 10) newX = 10; if (newX > 130) newX = 130;
+        if (newY < 10) newY = 10; if (newY > 190) newY = 190;
+        
+        dragElement.setAttribute('transform', 'translate('+newX+','+newY+')');
+      }
+      
+      if (e.type === 'touchmove') e.preventDefault();
+    }
+
+    function handlePointerUp(e) {
+      if (!dragElement) return;
+      dragElement.style.opacity = '1';
+
+      if (!dragHasMoved) {
+        const matchId = dragElement.dataset.match;
+        const half = dragElement.dataset.half;
+        const posStr = dragElement.dataset.pos;
+        openPositionModal(matchId, half, posStr);
+      } else {
+        const matchId = dragElement.dataset.match;
+        const half = dragElement.dataset.half;
+        const posStr = dragElement.dataset.pos;
+        
+        const tf = dragElement.getAttribute('transform');
+        if (tf) {
+          const m = tf.match(/translate\(([^,]+),\s*([^\)]+)\)/);
+          if (m) {
+             const cx = parseFloat(m[1]);
+             const cy = parseFloat(m[2]);
+             if (!state.customPositions) state.customPositions = {};
+             if (!state.customPositions[matchId]) state.customPositions[matchId] = {};
+             if (!state.customPositions[matchId][half]) state.customPositions[matchId][half] = {};
+             state.customPositions[matchId][half][posStr] = { x: cx, y: cy };
+             saveState();
+          }
+        }
+      }
+      dragElement = null;
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('mousemove', handlePointerMove);
+    document.addEventListener('mouseup', handlePointerUp);
+    document.addEventListener('touchstart', handlePointerDown, {passive: false});
+    document.addEventListener('touchmove', handlePointerMove, {passive: false});
+    document.addEventListener('touchend', handlePointerUp);
 
     // ===== Init =====
     loadState();
