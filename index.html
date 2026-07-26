@@ -576,7 +576,8 @@
           const req = f.df + f.mf + f.fw + 1;
           let assigned = 0;
           state.players.forEach(p => {
-            if (match.appearances[h] && match.appearances[h][p] && match.appearances[h][p] !== 'none') {
+            const s = match.appearances[h] ? match.appearances[h][p] : null;
+            if (s && s !== 'none' && s !== 'rest') {
               assigned++;
             }
           });
@@ -1000,26 +1001,18 @@
     let dragElement = null;
     let dragStartCoords = {x:0, y:0};
     let dragHasMoved = false;
+    let longPressTimer = null;
+    let isSwappingMode = false;
 
     function handlePointerDown(e) {
       const g = e.target.closest('.draggable-pos');
       if (!g) return;
       
-      if (!isFormationDragMode) {
-        const matchId = g.dataset.match;
-        const half = g.dataset.half;
-        const posStr = g.dataset.pos;
-        openPositionModal(matchId, half, posStr);
-        if (e.type === 'touchstart') e.preventDefault();
-        return;
-      }
-
       dragElement = g;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       dragStartCoords = { x: clientX, y: clientY };
       dragHasMoved = false;
-      dragElement.style.opacity = '0.7';
       
       const tf = dragElement.getAttribute('transform');
       let cx = 0, cy = 0;
@@ -1029,7 +1022,19 @@
       }
       dragElement.dataset.origX = cx;
       dragElement.dataset.origY = cy;
+
+      if (!isFormationDragMode) {
+        isSwappingMode = false;
+        if (longPressTimer) clearTimeout(longPressTimer);
+        longPressTimer = setTimeout(() => {
+          isSwappingMode = true;
+          dragElement.style.opacity = '0.5';
+          if (navigator.vibrate) navigator.vibrate(50);
+        }, 400);
+        return; // Don't prevent default, allow scrolling
+      }
       
+      dragElement.style.opacity = '0.7';
       if (e.type === 'touchstart') e.preventDefault();
     }
 
@@ -1044,9 +1049,19 @@
       
       if (!dragHasMoved && Math.hypot(dx, dy) > 5) {
         dragHasMoved = true;
+        if (!isFormationDragMode && !isSwappingMode) {
+          if (longPressTimer) clearTimeout(longPressTimer);
+          longPressTimer = null;
+          dragElement = null;
+          return;
+        }
       }
 
       if (dragHasMoved) {
+        if (!isFormationDragMode && isSwappingMode && e.type === 'touchmove') {
+           e.preventDefault(); // Prevent scroll while swapping
+        }
+        
         const svg = dragElement.closest('svg');
         const rect = svg.getBoundingClientRect();
         const scaleX = 140 / rect.width;
@@ -1055,45 +1070,76 @@
         let newX = parseFloat(dragElement.dataset.origX) + dx * scaleX;
         let newY = parseFloat(dragElement.dataset.origY) + dy * scaleY;
         
-        // Boundaries
         if (newX < 10) newX = 10; if (newX > 130) newX = 130;
         if (newY < 10) newY = 10; if (newY > 190) newY = 190;
         
         dragElement.setAttribute('transform', 'translate('+newX+','+newY+')');
       }
       
-      if (e.type === 'touchmove') e.preventDefault();
+      if (isFormationDragMode && e.type === 'touchmove') e.preventDefault();
     }
 
     function handlePointerUp(e) {
       if (!dragElement) return;
+      if (longPressTimer) clearTimeout(longPressTimer);
+      
       dragElement.style.opacity = '1';
 
-      if (!dragHasMoved) {
-        const matchId = dragElement.dataset.match;
-        const half = dragElement.dataset.half;
-        const posStr = dragElement.dataset.pos;
-        openPositionModal(matchId, half, posStr);
+      const matchId = dragElement.dataset.match;
+      const half = dragElement.dataset.half;
+      const posStr = dragElement.dataset.pos;
+
+      if (!isFormationDragMode) {
+        if (isSwappingMode) {
+           dragElement.setAttribute('transform', 'translate('+dragElement.dataset.origX+','+dragElement.dataset.origY+')');
+           const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+           const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+           
+           dragElement.style.display = 'none';
+           const dropTarget = document.elementFromPoint(clientX, clientY);
+           dragElement.style.display = '';
+           
+           const targetG = dropTarget ? dropTarget.closest('.draggable-pos') : null;
+           if (targetG && targetG !== dragElement && targetG.dataset.match === matchId && targetG.dataset.half === half) {
+             const targetPosStr = targetG.dataset.pos;
+             const match = state.matches.find(m => m.id === matchId);
+             if (match) {
+               let p1 = null, p2 = null;
+               state.players.forEach(p => {
+                 if (match.appearances[half][p] === posStr) p1 = p;
+                 if (match.appearances[half][p] === targetPosStr) p2 = p;
+               });
+               if (p1) match.appearances[half][p1] = targetPosStr;
+               if (p2) match.appearances[half][p2] = posStr;
+               saveState();
+             }
+           }
+           render();
+        } else {
+           if (!dragHasMoved) openPositionModal(matchId, half, posStr);
+        }
       } else {
-        const matchId = dragElement.dataset.match;
-        const half = dragElement.dataset.half;
-        const posStr = dragElement.dataset.pos;
-        
-        const tf = dragElement.getAttribute('transform');
-        if (tf) {
-          const m = tf.match(/translate\(([^,]+),\s*([^\)]+)\)/);
-          if (m) {
-             const cx = parseFloat(m[1]);
-             const cy = parseFloat(m[2]);
-             if (!state.customPositions) state.customPositions = {};
-             if (!state.customPositions[matchId]) state.customPositions[matchId] = {};
-             if (!state.customPositions[matchId][half]) state.customPositions[matchId][half] = {};
-             state.customPositions[matchId][half][posStr] = { x: cx, y: cy };
-             saveState();
+        if (!dragHasMoved) {
+          openPositionModal(matchId, half, posStr);
+        } else {
+          const tf = dragElement.getAttribute('transform');
+          if (tf) {
+            const m = tf.match(/translate\(([^,]+),\s*([^\)]+)\)/);
+            if (m) {
+               const cx = parseFloat(m[1]);
+               const cy = parseFloat(m[2]);
+               if (!state.customPositions) state.customPositions = {};
+               if (!state.customPositions[matchId]) state.customPositions[matchId] = {};
+               if (!state.customPositions[matchId][half]) state.customPositions[matchId][half] = {};
+               state.customPositions[matchId][half][posStr] = { x: cx, y: cy };
+               saveState();
+            }
           }
         }
       }
+      
       dragElement = null;
+      isSwappingMode = false;
     }
 
     document.addEventListener('mousedown', handlePointerDown);
