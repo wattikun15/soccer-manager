@@ -562,7 +562,11 @@
 
     function toggleFormation(matchId) {
       if (!state.collapsedFormations) state.collapsedFormations = {};
-      state.collapsedFormations[matchId] = !state.collapsedFormations[matchId];
+      if (state.collapsedFormations[matchId] === undefined) {
+        state.collapsedFormations[matchId] = false;
+      } else {
+        state.collapsedFormations[matchId] = !state.collapsedFormations[matchId];
+      }
       render();
     }
 
@@ -573,7 +577,7 @@
       const isDragActive = window.formationDragMatchId === match.id;
       const disableOthers = isDragActive ? ' pointer-events:none; opacity:0.3;' : '';
       const isCollapsed = isDragActive ? false : (state.collapsedFormations[match.id] !== false);
-      const chevron = isCollapsed ? '&#x25BC;' : '&#x25B2;';
+      const toggleLabel = isCollapsed ? '開く &#x25BC;' : '閉じる &#x25B2;';
 
       const halves = ['\u524d\u534a','\u5f8c\u534a'];
       let countText = '';
@@ -599,7 +603,7 @@
 
       const titleHtml = '<div class="formation-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:'+(isCollapsed?'0':'12px')+';'+disableOthers+'" onclick="toggleFormation(\''+match.id+'\')">'
          + '<div style="display:flex; align-items:center;"><span>&#x1F9E9; \u30d5\u30a9\u30fc\u30e1\u30fc\u30b7\u30e7\u30f3</span>' + countText + '</div>'
-         + '<span style="font-size:0.8rem; padding:4px;">'+chevron+'</span>'
+         + '<button class="btn btn-ghost btn-sm" style="font-size:0.75rem; padding:4px 8px; border:1px solid var(--border-subtle); border-radius:50px; pointer-events:none;">'+toggleLabel+'</button>'
          + '</div>';
 
       if (isCollapsed) {
