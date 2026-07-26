@@ -278,6 +278,16 @@
     </div>
   </div>
 
+  <!-- 休憩者一覧モーダル -->
+  <div class="modal-overlay" id="restingPlayersModal">
+    <div class="modal" style="max-width: 320px; margin:0 auto;">
+      <div class="modal-handle"></div>
+      <h3 style="text-align:center; font-size:1.1rem; margin-bottom:16px; color:var(--text-primary);" id="restingPlayersModalTitle">休憩者一覧</h3>
+      <div id="restingPlayersList" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; justify-content:center;"></div>
+      <button class="btn btn-ghost" style="width:100%; justify-content:center; padding:12px; border:1px solid var(--border-glass); color:var(--text-muted);" onclick="closeModal('restingPlayersModal')">閉じる</button>
+    </div>
+  </div>
+
   <!-- 選手履歴モーダル -->
   <div class="modal-overlay" id="playerHistoryModal">
     <div class="modal" style="max-width: 360px; margin:0 auto; max-height:80vh; display:flex; flex-direction:column;">
@@ -720,6 +730,32 @@
       return '';
     }
 
+    function openRestingPlayersModal(matchId, half) {
+      if (state.editMode || state.playerEditMode) return;
+      const match = state.matches.find(m => m.id === matchId);
+      if (!match) return;
+      
+      document.getElementById('restingPlayersModalTitle').innerHTML = '&#x2615; ' + escHtml(match.name) + ' (' + half + ') の休憩者';
+      
+      let resting = [];
+      state.players.forEach(p => {
+        const s = match.appearances[half][p];
+        if (!s || s === 'none') resting.push(p);
+      });
+      
+      let html = '';
+      if (resting.length === 0) {
+        html = '<p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:0;">休憩者はいません</p>';
+      } else {
+        resting.forEach(p => {
+          html += '<span style="background:rgba(255,255,255,0.05); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:6px 12px; font-size:0.9rem; color:var(--text-primary);">' + escHtml(p) + '</span>';
+        });
+      }
+      
+      document.getElementById('restingPlayersList').innerHTML = html;
+      document.getElementById('restingPlayersModal').classList.add('active');
+    }
+
     function openPlayerHistoryModal(playerName) {
       document.getElementById('playerHistoryModalTitle').innerHTML = '&#x1F4CB; ' + escHtml(playerName) + ' の履歴';
       let html = '';
@@ -858,7 +894,7 @@
           return '<td class="cell" data-status="'+cellStatus+'" onclick="openStatusModal(\''+match.id+'\',\''+half+'\',\''+escHtml(player)+'\')">'
             +'<div class="cell-content">'+display+'</div></td>';
         }).join('');
-        rows+='<tr><td class="half-label '+halfClass+'">'+half+'</td>'+cells+'</tr>';
+        rows+='<tr><td class="half-label '+halfClass+'" style="cursor:pointer; text-decoration:underline; text-decoration-color:var(--border-subtle); text-underline-offset:2px;" onclick="openRestingPlayersModal(\''+match.id+'\',\''+half+'\')">'+half+'</td>'+cells+'</tr>';
       });
       let countCells=state.players.map(player => {
         const counts=countPlayerInMatch(match.id,player);
