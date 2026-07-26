@@ -203,6 +203,7 @@
     <div class="header-top" style="margin-bottom:0;">
       <h1 class="app-title">&#x26BD; 出場管理</h1>
       <div class="header-actions">
+        <button class="btn btn-primary btn-sm" style="padding:6px 12px; margin-right:8px; font-weight:bold;" onclick="openMatchModal()">&#xFF0B; 試合</button>
         <button class="btn btn-ghost btn-sm edit-toggle" id="editToggle" onclick="toggleEditMode()">&#x270F;&#xFE0F; 試合編集</button>
       </div>
     </div>
@@ -210,9 +211,6 @@
 
   <main class="main" id="mainContent"></main>
 
-  <div class="fab-container">
-    <button class="fab fab-match" onclick="openMatchModal()" title="試合を追加">&#xFF0B; 試合</button>
-  </div>
 
   <!-- 選手追加モーダル -->
   <div class="modal-overlay" id="playerModal">
@@ -575,14 +573,17 @@
           const f = (match.formation && match.formation[h]) ? match.formation[h] : {df:3,mf:3,fw:1};
           const req = f.df + f.mf + f.fw + 1;
           let assigned = 0;
+          let restingCount = 0;
           state.players.forEach(p => {
             const s = match.appearances[h] ? match.appearances[h][p] : null;
             if (s && s !== 'none' && s !== 'rest') {
               assigned++;
+            } else if (!s || s === 'none' || s === 'rest') {
+              restingCount++;
             }
           });
           const color = assigned === req ? 'var(--accent-green)' : (assigned > req ? 'var(--accent-red)' : 'var(--text-muted)');
-          return h + ': <span style="color:'+color+'; font-weight:700;">' + assigned + '/' + req + '人</span>';
+          return h + ': <span style="color:'+color+'; font-weight:700;">' + assigned + '/' + req + '人</span> <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">(休: ' + restingCount + ')</span>';
         });
         countText = '<span style="font-size:0.7rem; color:var(--text-muted); margin-left:8px; font-weight:normal;">(' + counts.join(', ') + ')</span>';
       }
@@ -869,7 +870,10 @@
       
       let actionBtns = '';
       if (!state.playerEditMode) {
+        actionBtns += '<div style="display:flex; align-items:center; gap:8px;">';
+        actionBtns += '<span style="font-size:0.9rem; font-weight:bold; color:var(--text-secondary); margin-right:4px;">登録: ' + state.players.length + '人</span>';
         actionBtns += '<button class="btn btn-success" style="padding:10px 20px; font-size:1rem;" onclick="openPlayerModal()">&#xFF0B; 選手</button>';
+        actionBtns += '</div>';
         if (state.players.length > 0) {
           actionBtns += '<button class="btn btn-ghost" style="padding:10px 20px; font-size:1rem;" onclick="togglePlayerEditMode()">&#x270F;&#xFE0F; 選手編集</button>';
         }
