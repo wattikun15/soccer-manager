@@ -628,6 +628,10 @@
           +buildPitchContent(f, match, half)
           +'</svg></div>'
           +'<div class="formation-inputs" style="justify-content:center; margin-top:8px;">'+spinner('df','df')+spinner('mf','mf')+spinner('fw','fw')+'</div>'
+          +'<div style="text-align:center; margin-top:12px;">'
+          +'<button class="btn ' + (isFormationDragMode ? 'btn-primary' : 'btn-ghost') + ' btn-sm" style="padding:6px 16px; border-radius:50px; font-size:0.8rem; border:1px solid var(' + (isFormationDragMode ? '--accent-primary' : '--border-glass') + ');" onclick="toggleFormationDragMode()">'
+          +(isFormationDragMode ? '&#x2714;&#xFE0F; 位置修正を完了' : '&#x2194;&#xFE0F; 丸の位置を修正する')
+          +'</button></div>'
           +'</div>';
       }).join('');
       return '<div class="formation-section">' + titleHtml
@@ -986,6 +990,12 @@
       showToast('\uD83D\uDDD1\uFE0F \u5168\u30c7\u30fc\u30bf\u3092\u524a\u9664\u3057\u307e\u3057\u305f');
     }
 
+    let isFormationDragMode = false;
+    function toggleFormationDragMode() {
+      isFormationDragMode = !isFormationDragMode;
+      render();
+    }
+
     // ===== Draggable Formations =====
     let dragElement = null;
     let dragStartCoords = {x:0, y:0};
@@ -994,6 +1004,16 @@
     function handlePointerDown(e) {
       const g = e.target.closest('.draggable-pos');
       if (!g) return;
+      
+      if (!isFormationDragMode) {
+        const matchId = g.dataset.match;
+        const half = g.dataset.half;
+        const posStr = g.dataset.pos;
+        openPositionModal(matchId, half, posStr);
+        if (e.type === 'touchstart') e.preventDefault();
+        return;
+      }
+
       dragElement = g;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
